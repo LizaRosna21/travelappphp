@@ -6,6 +6,9 @@ import bcrypt from "bcrypt";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import { getUserByUsername, getUser } from "./bypass-memstorage";
+import { parse as parseCookie } from "cookie";
+import signature from "cookie-signature";
+import type { IncomingMessage } from "http";
 
 declare global {
   namespace Express {
@@ -19,36 +22,67 @@ export async function hashPassword(password: string) {
 }
 
 async function comparePasswords(supplied: string, stored: string) {
+  // Şifreler asla loglanmaz ve hiçbir koşulda sabit değerle eşleştirilmez.
+  if (!supplied || !stored) return false;
+
   try {
-    console.log(`Comparing passwords: supplied=${supplied} , stored=${stored}`);
-    
-    // Tüm demo kullanıcılar için en basit güvenlik - üretim ortamında kullanmayın!
-    // Belirli kullanıcılar için önceden tanımlanmış şifreleri kabul et
-    if (supplied === 'admin123' || supplied === 'superadmin123' || supplied === 'demo123' || 
-        supplied === 'agent123' || supplied === 'member123') {
-      console.log(`Demo user password match hardcoded for: ${supplied}`);
-      return true;
-    }
-    
-    // Bu noktada gelirsek, yine de bcrypt karşılaştırmasını dene
-    try {
-      const result = await bcrypt.compare(supplied, stored);
-      console.log(`Password comparison result: ${result}`);
-      return result;
-    } catch (bcryptError) {
-      console.error('Bcrypt comparison error:', bcryptError);
-    }
-    
-    return false;
+    return await bcrypt.compare(supplied, stored);
   } catch (error) {
-    console.error('Error comparing passwords:', error);
+    console.error('Şifre karşılaştırma hatası');
     return false;
   }
 }
 
+/**
+ * Kullanıcı nesnesinden şifre alanını çıkarır.
+ * İstemciye dönen hiçbir yanıt şifre hash'i içermemelidir.
+ */
+function toSafeUser<T extends { password?: string }>(user: T): Omit<T, 'password'> {
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
+/** Oturum çerezini doğrulamak için setupAuth sırasında saklanan secret. */
+let activeSessionSecret: string | null = null;
+
+/**
+ * Bir HTTP upgrade isteğindeki oturum çerezinden kullanıcı kimliğini çözer.
+ * WebSocket bağlantıları için tek geçerli kimlik kaynağı budur; istemcinin
+ * mesajla gönderdiği userId'ye asla güvenilmez.
+ */
+export function resolveSessionUserId(req: IncomingMessage): Promise<number | null> {
+  return new Promise((resolve) => {
+    try {
+      const cookieHeader = req.headers?.cookie;
+      if (!cookieHeader || !activeSessionSecret) return resolve(null);
+
+      const rawCookie = parseCookie(cookieHeader)["connect.sid"];
+      if (!rawCookie || !rawCookie.startsWith("s:")) return resolve(null);
+
+      const sessionId = signature.unsign(rawCookie.slice(2), activeSessionSecret);
+      if (!sessionId) return resolve(null);
+
+      storage.sessionStore.get(sessionId, (err, session: any) => {
+        if (err || !session) return resolve(null);
+        const userId = session?.passport?.user;
+        resolve(typeof userId === "number" ? userId : null);
+      });
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 export function setupAuth(app: Express) {
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret && process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_SECRET üretim ortamında zorunludur. Rastgele ve uzun bir değer tanımlayın.",
+    );
+  }
+
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "ferry-booking-secret-key",
+    secret: sessionSecret || "insecure-development-only-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
@@ -59,6 +93,8 @@ export function setupAuth(app: Express) {
     }
   };
 
+  activeSessionSecret = sessionSettings.secret as string;
+
   app.set("trust proxy", 1);
   app.use(session(sessionSettings));
   app.use(passport.initialize());
@@ -67,25 +103,18 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        console.log("Login attempt for:", username);
-        
         // Önce veritabanını kontrol et
         let user = await getUserByUsername(username);
         
         if (!user) {
           // Eğer veritabanında bulunamazsa MemStorage'a bak
-          console.log(`DB'de kullanıcı bulunamadı: ${username}, MemStorage kontrol ediliyor...`);
           user = await storage.getUserByUsername(username);
-        } else {
-          console.log(`DB'den kullanıcı bulundu: ${username}, ID: ${user.id}, Rol: ${user.role}`);
         }
         
         // Şifre kontrolü
         if (!user || !(await comparePasswords(password, user.password))) {
-          console.log("Kimlik doğrulama başarısız: Geçersiz kullanıcı adı veya şifre");
           return done(null, false, { message: "Invalid username or password" });
         } else {
-          console.log(`Kullanıcı başarıyla doğrulandı: ${username}`);
           return done(null, user);
         }
       } catch (error) {
@@ -107,13 +136,9 @@ export function setupAuth(app: Express) {
         user = await storage.getUser(id);
       }
       
-      // Hassas verileri temizle
-      if (user) {
-        const { password, ...safeUser } = user;
-        done(null, { ...safeUser, password: user.password }); // Şifre hala authentication için gerekli
-      } else {
-        done(null, null);
-      }
+      // Hassas verileri temizle. Şifre hash'i oturum nesnesinde taşınmaz;
+      // parola doğrulaması yalnızca LocalStrategy içinde, giriş anında yapılır.
+      done(null, user ? toSafeUser(user) : null);
     } catch (error) {
       console.error("Deserialize hatası:", error);
       done(error);
@@ -142,7 +167,7 @@ export function setupAuth(app: Express) {
       // Log in the user
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.status(201).json(user);
+        return res.status(201).json(toSafeUser(user));
       });
     } catch (error) {
       next(error);
@@ -150,8 +175,6 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    console.log("Login attempt for:", req.body.username);
-    
     passport.authenticate("local", (err, user, info) => {
       if (err) {
         console.error("Login error:", err);
@@ -163,15 +186,12 @@ export function setupAuth(app: Express) {
         return res.status(401).json(info || { message: "Authentication failed" });
       }
 
-      console.log("User authenticated successfully:", user.username);
-      
       req.login(user, (loginErr) => {
         if (loginErr) {
           console.error("Session login error:", loginErr);
           return next(loginErr);
         }
-        console.log("Login completed successfully for:", user.username);
-        return res.status(200).json(user);
+        return res.status(200).json(toSafeUser(user));
       });
     })(req, res, next);
   });
@@ -186,10 +206,8 @@ export function setupAuth(app: Express) {
   app.get("/api/user", (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ message: "Not authenticated" });
     
-    // Hassas bilgileri filtreleyen optimize edilmiş yanıt döndür
-    // Bu, gereksiz veri transferini azaltır ve güvenliği artırır
-    const { password, ...safeUserData } = req.user;
-    res.json(safeUserData);
+    // Hassas bilgileri filtreleyen yanıt döndür
+    res.json(toSafeUser(req.user));
   });
 
   // Admin check middleware

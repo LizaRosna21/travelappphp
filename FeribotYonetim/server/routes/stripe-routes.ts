@@ -3,19 +3,22 @@ import Stripe from 'stripe';
 import { isAuthenticated } from '../auth';
 import { IStorage } from '../storage';
 
-// Stripe API anahtarını ortam değişkeninden al, yoksa test anahtarını kullan
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY || 'sk_test_REDACTED_SEE_COMMIT_MESSAGE';
+// Stripe API anahtarı yalnızca ortam değişkeninden okunur.
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
-// Stripe servisini başlat
-const stripe = new Stripe(STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+if (!STRIPE_SECRET_KEY) {
+  console.warn('STRIPE_SECRET_KEY tanımlı değil - Stripe route\'ları devre dışı.');
+}
+
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' })
+  : (null as unknown as Stripe);
 
 export function registerStripeRoutes(router: Router, storage: IStorage) {
   // Stripe public key'i dön
   router.get('/stripe/config', (req: Request, res: Response) => {
     res.json({
-      publishableKey: process.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_51O4TFRFZnC8KcXMbrbAHhrzVAeJcfvlK6MixkHSFPRZOcYW9dlKjdmDflQqJWocHNGp6lqmvg3jyPzHPbIGG7kg400xvlJOZwg',
+      publishableKey: process.env.VITE_STRIPE_PUBLIC_KEY || '',
     });
   });
 

@@ -53,9 +53,12 @@ import {
   InboxMessage,
   InsertInboxMessage,
   Notification,
-  InsertNotification
+  InsertNotification,
+  agencies,
+  userProfiles,
 } from '@shared/schema';
 import { db } from './db';
+import { clearUserCaches } from './bypass-memstorage';
 import { eq, like, and, or, not, desc, asc, count, exists, isNull, inArray, between, lte, gte, sql } from 'drizzle-orm';
 import session from 'express-session';
 import connectPg from "connect-pg-simple";
@@ -257,6 +260,18 @@ export interface IStorage {
   deleteRoutePricing(id: number): Promise<boolean>;
   
   // Demo veri oluşturma işlemleri için gerekli metodlar
+  // Kullanıcı profilleri
+  getUserProfileByUserId(userId: number): Promise<any | undefined>;
+  createUserProfile(profileData: any): Promise<any>;
+  updateUserProfile(userId: number, profileData: any): Promise<any | undefined>;
+
+  // B2B acenteleri
+  getAllAgencies(): Promise<any[]>;
+  getAgencyById(id: number): Promise<any | undefined>;
+  createAgency(agencyData: any): Promise<any>;
+  updateAgency(id: number, agencyData: any): Promise<any | undefined>;
+  deleteAgency(id: number): Promise<boolean>;
+
   createReview(reviewData: any): Promise<any>;
   getReviewsByUserId(userId: number): Promise<any[]>;
   createReviewReply(replyData: any): Promise<any>;
@@ -392,6 +407,8 @@ export class DatabaseStorage implements IStorage {
         isActive: true
       }).returning();
       
+      // Kullanıcı önbelleğini geçersiz kıl; yeni kullanıcı hemen görünsün
+      clearUserCaches();
       return createdUser;
     } catch (error) {
       console.error('Kullanıcı oluşturma hatası:', error);
@@ -406,6 +423,8 @@ export class DatabaseStorage implements IStorage {
         .where(eq(users.id, id))
         .returning();
       
+      // Kullanıcı önbelleğini geçersiz kıl; şifre/rol/durum değişikliği anında etkili olsun
+      clearUserCaches();
       return updatedUser;
     } catch (error) {
       console.error('Kullanıcı güncelleme hatası:', error);
@@ -1517,6 +1536,8 @@ export class DatabaseStorage implements IStorage {
   async deleteUser(id: number): Promise<boolean> {
     try {
       await db.delete(users).where(eq(users.id, id));
+      // Kullanıcı önbelleğini geçersiz kıl; silinen kullanıcı önbellekte kalmasın
+      clearUserCaches();
       return true;
     } catch (error) {
       console.error('Kullanıcı silme hatası:', error);
@@ -1525,6 +1546,95 @@ export class DatabaseStorage implements IStorage {
   }
   
   // Demo veri oluşturma işlemleri için gerekli metodlar
+  // ---- Kullanıcı profilleri ----
+
+  async getUserProfileByUserId(userId: number): Promise<any | undefined> {
+    try {
+      const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
+      return profile;
+    } catch (error) {
+      console.error('Kullanıcı profili getirme hatası:', error);
+      return undefined;
+    }
+  }
+
+  async createUserProfile(profileData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(userProfiles).values(profileData).returning();
+      return created;
+    } catch (error) {
+      console.error('Kullanıcı profili oluşturma hatası:', error);
+      throw error;
+    }
+  }
+
+  async updateUserProfile(userId: number, profileData: any): Promise<any | undefined> {
+    try {
+      const [updated] = await db.update(userProfiles)
+        .set(profileData)
+        .where(eq(userProfiles.userId, userId))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Kullanıcı profili güncelleme hatası:', error);
+      return undefined;
+    }
+  }
+
+  // ---- B2B acenteleri ----
+
+  async getAllAgencies(): Promise<any[]> {
+    try {
+      return await db.select().from(agencies).orderBy(asc(agencies.id));
+    } catch (error) {
+      console.error('Acenteleri getirme hatası:', error);
+      return [];
+    }
+  }
+
+  async getAgencyById(id: number): Promise<any | undefined> {
+    try {
+      const [agency] = await db.select().from(agencies).where(eq(agencies.id, id));
+      return agency;
+    } catch (error) {
+      console.error('Acente getirme hatası:', error);
+      return undefined;
+    }
+  }
+
+  async createAgency(agencyData: any): Promise<any> {
+    try {
+      const [created] = await db.insert(agencies).values(agencyData).returning();
+      return created;
+    } catch (error) {
+      console.error('Acente oluşturma hatası:', error);
+      throw error;
+    }
+  }
+
+  async updateAgency(id: number, agencyData: any): Promise<any | undefined> {
+    try {
+      const [updated] = await db.update(agencies)
+        .set(agencyData)
+        .where(eq(agencies.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Acente güncelleme hatası:', error);
+      return undefined;
+    }
+  }
+
+  async deleteAgency(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(agencies).where(eq(agencies.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Acente silme hatası:', error);
+      return false;
+    }
+  }
+
   async createReview(reviewData: any): Promise<any> {
     console.log('Creating review:', reviewData);
     try {

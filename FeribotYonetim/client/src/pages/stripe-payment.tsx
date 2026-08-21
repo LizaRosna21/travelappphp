@@ -23,11 +23,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 
-// Test anahtarları - gerçek anahtarlar environment'tan yüklenecek
-const TEST_STRIPE_PUBLIC_KEY = 'pk_test_51O4TFRFZnC8KcXMbrbAHhrzVAeJcfvlK6MixkHSFPRZOcYW9dlKjdmDflQqJWocHNGp6lqmvg3jyPzHPbIGG7kg400xvlJOZwg';
-
-// Stripe instance oluştur
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || TEST_STRIPE_PUBLIC_KEY);
+// Yayınlanabilir anahtar ortam değişkeninden gelir; koda gömülmez.
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || '');
 
 // CardElement stilleri
 const CARD_ELEMENT_OPTIONS: CardElementProps['options'] = {

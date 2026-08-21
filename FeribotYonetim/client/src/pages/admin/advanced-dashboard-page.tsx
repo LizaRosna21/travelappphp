@@ -336,20 +336,7 @@ const AdvancedDashboardPage = () => {
             <CardContent className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart
-                  data={[
-                    { name: 'Oca', gelir: 650000, rezervasyon: 580 },
-                    { name: 'Şub', gelir: 730000, rezervasyon: 620 },
-                    { name: 'Mar', gelir: 880000, rezervasyon: 700 },
-                    { name: 'Nis', gelir: 950000, rezervasyon: 780 },
-                    { name: 'May', gelir: 1150000, rezervasyon: 900 },
-                    { name: 'Haz', gelir: 1350000, rezervasyon: 1100 },
-                    { name: 'Tem', gelir: 1550000, rezervasyon: 1300 },
-                    { name: 'Ağu', gelir: 1720000, rezervasyon: 1450 },
-                    { name: 'Eyl', gelir: 1450000, rezervasyon: 1200 },
-                    { name: 'Eki', gelir: 1250000, rezervasyon: 950 },
-                    { name: 'Kas', gelir: 1150000, rezervasyon: 870 },
-                    { name: 'Ara', gelir: 1050000, rezervasyon: 820 },
-                  ]}
+                  data={analyticsData?.monthlyRevenue || []}
                   margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                 >
                   <defs>
@@ -406,12 +393,7 @@ const AdvancedDashboardPage = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={[
-                        { name: 'Feribot', value: 72 },
-                        { name: 'Transfer', value: 15 },
-                        { name: 'Paket Tur', value: 8 },
-                        { name: 'Diğer', value: 5 },
-                      ]}
+                      data={analyticsData?.categoryBreakdown || []}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
@@ -479,31 +461,49 @@ const AdvancedDashboardPage = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {[
-                    { name: 'Sayfa Ziyaretleri', value: 24850 },
-                    { name: 'Arama Yapanlar', value: 10320 },
-                    { name: 'Sepete Ekleyenler', value: 3450 },
-                    { name: 'Ödeme Başlatanlar', value: 1820 },
-                    { name: 'Tamamlanan Siparişler', value: 1240 },
-                  ].map((step, index) => {
-                    const percent = (step.value / 24850) * 100;
-                    return (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span>{step.name}</span>
-                          <span className="font-medium">
-                            {step.value.toLocaleString('tr-TR')}
-                            {index > 0 && 
-                              <span className="text-muted-foreground text-xs ml-1">
-                                ({percent.toFixed(1)}%)
-                              </span>
-                            }
-                          </span>
+                  {(() => {
+                    const funnel = analyticsData?.salesFunnel;
+                    const steps = [
+                      { name: 'Sayfa Ziyaretleri', value: funnel?.pageVisits },
+                      { name: 'Arama Yapanlar', value: funnel?.searches },
+                      { name: 'Sepete Ekleyenler', value: funnel?.addedToCart },
+                      { name: 'Oluşturulan Rezervasyonlar', value: funnel?.initiatedPayment },
+                      { name: 'Ödemesi Tamamlananlar', value: funnel?.completedBookings },
+                    ];
+                    // Huninin tepesi ölçülemiyorsa yüzdeleri ölçülebilen ilk basamağa göre hesapla
+                    const base = steps.find((s) => typeof s.value === 'number' && s.value > 0)?.value ?? 0;
+
+                    return steps.map((step, index) => {
+                      const measured = typeof step.value === 'number';
+                      const percent = measured && base > 0 ? (step.value / base) * 100 : 0;
+
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span>{step.name}</span>
+                            <span className="font-medium">
+                              {measured ? (
+                                <>
+                                  {step.value.toLocaleString('tr-TR')}
+                                  {index > 0 && (
+                                    <span className="text-muted-foreground text-xs ml-1">
+                                      ({percent.toFixed(1)}%)
+                                    </span>
+                                  )}
+                                </>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">ölçülmüyor</span>
+                              )}
+                            </span>
+                          </div>
+                          <Progress value={percent} className="h-2" />
                         </div>
-                        <Progress value={percent} className="h-2" />
-                      </div>
-                    );
-                  })}
+                      );
+                    });
+                  })()}
+                  <p className="text-xs text-muted-foreground pt-1">
+                    Ziyaret ve arama basamakları için web analitiği entegrasyonu gerekiyor.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -516,40 +516,17 @@ const AdvancedDashboardPage = () => {
               <CardHeader>
                 <CardTitle className="text-sm">Ziyaretçi Metrikleri</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Toplam Ziyaretçi</p>
-                    <p className="text-lg font-semibold">24,850</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Ortalama Süre</p>
-                    <p className="text-lg font-semibold">4m 38s</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Hemen Çıkma Oranı</p>
-                    <p className="text-lg font-semibold">34.5%</p>
-                  </div>
-                </div>
-                
-                <div className="pt-4">
-                  <div className="text-xs font-medium mb-1">Trafik Kaynakları</div>
-                  <div className="space-y-2">
-                    {[
-                      { name: 'Organik Arama', value: 38 },
-                      { name: 'Direkt', value: 25 },
-                      { name: 'Referans', value: 22 },
-                      { name: 'Sosyal Medya', value: 15 },
-                    ].map((source, i) => (
-                      <div key={i} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span>{source.name}</span>
-                          <span>{source.value}%</span>
-                        </div>
-                        <Progress value={source.value} className="h-1" />
-                      </div>
-                    ))}
-                  </div>
+              <CardContent>
+                {/* Sistemde web analitiği entegrasyonu yok. Uydurma sayı göstermek
+                    yerine durumu açıkça belirtiyoruz. */}
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Info className="h-5 w-5 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Ziyaretçi verisi mevcut değil
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bu panel için bir web analitiği entegrasyonu (ör. GA4) bağlanmalı.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -562,38 +539,32 @@ const AdvancedDashboardPage = () => {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Başarılı Ödemeler</p>
-                    <p className="text-lg font-semibold text-emerald-600">1,240</p>
+                    <p className="text-xs text-muted-foreground">Ödenmiş</p>
+                    <p className="text-lg font-semibold text-emerald-600">
+                      {(analyticsData?.paymentSummary?.successful ?? 0).toLocaleString('tr-TR')}
+                    </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Başarısız</p>
-                    <p className="text-lg font-semibold text-rose-600">183</p>
+                    <p className="text-xs text-muted-foreground">Ödeme Bekleyen</p>
+                    <p className="text-lg font-semibold text-rose-600">
+                      {(analyticsData?.paymentSummary?.failed ?? 0).toLocaleString('tr-TR')}
+                    </p>
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground">İadeler</p>
-                    <p className="text-lg font-semibold text-amber-600">45</p>
+                    <p className="text-lg font-semibold text-amber-600">
+                      {(analyticsData?.paymentSummary?.refunded ?? 0).toLocaleString('tr-TR')}
+                    </p>
                   </div>
                 </div>
-                
+
+                {/* Ödeme yöntemi kırılımı rezervasyon kayıtlarında tutulmuyor;
+                    uydurma yüzdeler yerine durumu belirtiyoruz. */}
                 <div className="pt-4">
                   <div className="text-xs font-medium mb-1">Ödeme Yöntemleri</div>
-                  <div className="space-y-1">
-                    {[
-                      { name: 'Kredi Kartı', value: 65, icon: <CreditCard className="h-3 w-3" /> },
-                      { name: 'Havale/EFT', value: 18, icon: <Building className="h-3 w-3" /> },
-                      { name: 'Online Ödeme', value: 12, icon: <Globe className="h-3 w-3" /> },
-                      { name: 'Diğer', value: 5, icon: <CircleDollarSign className="h-3 w-3" /> },
-                    ].map((method, i) => (
-                      <div key={i} className="flex items-center space-x-2">
-                        {method.icon}
-                        <span className="text-xs">{method.name}</span>
-                        <div className="flex-1">
-                          <Progress value={method.value} className="h-1" />
-                        </div>
-                        <span className="text-xs font-medium">{method.value}%</span>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Yöntem kırılımı için ödeme sağlayıcı verisi henüz kaydedilmiyor.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -603,49 +574,17 @@ const AdvancedDashboardPage = () => {
               <CardHeader>
                 <CardTitle className="text-sm">Sistem Performansı</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Yanıt Süresi</p>
-                    <p className="text-lg font-semibold">238ms</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">İşlem Süresi</p>
-                    <p className="text-lg font-semibold">1.2s</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">Hata Oranı</p>
-                    <p className="text-lg font-semibold">0.14%</p>
-                  </div>
-                </div>
-                
-                <div className="pt-4">
-                  <div className="text-xs font-medium mb-2">Sistem Durumu</div>
-                  <div className="space-y-2">
-                    {[
-                      { name: 'API Erişimi', value: 99.98, status: 'normal' },
-                      { name: 'Veritabanı', value: 99.95, status: 'normal' },
-                      { name: 'Ödeme Sistemi', value: 99.90, status: 'normal' },
-                      { name: 'WhatsApp API', value: 98.5, status: 'warning' },
-                    ].map((service, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs">
-                        <div className="flex items-center space-x-2">
-                          {service.status === 'normal' ? (
-                            <Check className="h-3 w-3 text-emerald-500" />
-                          ) : service.status === 'warning' ? (
-                            <AlertTriangle className="h-3 w-3 text-amber-500" />
-                          ) : (
-                            <AlertCircle className="h-3 w-3 text-rose-500" />
-                          )}
-                          <span>{service.name}</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Progress value={service.value} className="h-1 w-20" />
-                          <span className="font-medium">{service.value}%</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+              <CardContent>
+                {/* Uygulamada APM/uptime izleme yok. Sabit "99.98%" gibi değerler
+                    gerçek bir ölçüme dayanmadığı için gösterilmiyor. */}
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <Info className="h-5 w-5 text-muted-foreground mb-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Performans verisi mevcut değil
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Bu panel için bir APM / uptime izleme entegrasyonu bağlanmalı.
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -826,11 +765,20 @@ const AdvancedDashboardPage = () => {
                   <h4 className="text-sm font-medium">Özet</h4>
                   <div className="space-y-1">
                     {[
-                      { label: 'Toplam Rezervasyon', value: '1,240' },
-                      { label: 'Başarılı Ödemeler', value: '1,180' },
-                      { label: 'İptal Oranı', value: '4.8%' },
-                      { label: 'Ortalama Değer', value: formatCurrency(295) },
-                      { label: 'En Yüksek Gün', value: 'Cumartesi (215)' }
+                      {
+                        label: 'Toplam Rezervasyon',
+                        value: (analyticsData?.totalBookings ?? 0).toLocaleString('tr-TR')
+                      },
+                      {
+                        label: 'Ödemesi Tamamlanan',
+                        value: (analyticsData?.paymentSummary?.successful ?? 0).toLocaleString('tr-TR')
+                      },
+                      {
+                        label: 'İade Edilen',
+                        value: (analyticsData?.paymentSummary?.refunded ?? 0).toLocaleString('tr-TR')
+                      },
+                      { label: 'Ortalama Değer', value: analyticsData?.averageTicketValue ?? '-' },
+                      { label: 'Dönüşüm Oranı', value: analyticsData?.conversionRate ?? '-' }
                     ].map((item, i) => (
                       <div key={i} className="flex justify-between text-sm">
                         <span className="text-muted-foreground">{item.label}</span>

@@ -1,18 +1,19 @@
 import Stripe from 'stripe';
 
-// Test anahtarları - gerçek anahtarlar environment'tan yüklenecek
-const TEST_STRIPE_SECRET_KEY = 'sk_test_REDACTED_SEE_COMMIT_MESSAGE';
-const TEST_VITE_STRIPE_PUBLIC_KEY = 'pk_test_51O4TFRFZnC8KcXMbrbAHhrzVAeJcfvlK6MixkHSFPRZOcYW9dlKjdmDflQqJWocHNGp6lqmvg3jyPzHPbIGG7kg400xvlJOZwg';
+// Anahtarlar yalnızca ortam değişkenlerinden okunur; kaynak koda gömülmez.
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
 
-// Stripe instance oluştur - environment'ta anahtar varsa kullan, yoksa test anahtarını kullan
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || TEST_STRIPE_SECRET_KEY;
-const stripe = new Stripe(stripeSecretKey, {
-  apiVersion: '2023-10-16',
-});
+if (!stripeSecretKey) {
+  console.warn('STRIPE_SECRET_KEY tanımlı değil - Stripe ödemeleri devre dışı.');
+}
 
-// Stripe public key'i döndür - environment'ta anahtar varsa kullan, yoksa test anahtarını kullan
+const stripe = stripeSecretKey
+  ? new Stripe(stripeSecretKey, { apiVersion: '2023-10-16' })
+  : (null as unknown as Stripe);
+
+// Stripe public key'i döndür
 export const getStripePublicKey = () => {
-  return process.env.VITE_STRIPE_PUBLIC_KEY || TEST_VITE_STRIPE_PUBLIC_KEY;
+  return process.env.VITE_STRIPE_PUBLIC_KEY || '';
 };
 
 // Ödeme niyeti oluştur

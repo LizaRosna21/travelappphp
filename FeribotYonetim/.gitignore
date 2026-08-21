@@ -4,3 +4,12 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Ortam değişkenleri ve gizli bilgiler asla depoya girmemeli
+.env
+.env.*
+!.env.example
+cookie.txt
+backups/
+data/tickets/
+public/uploads/

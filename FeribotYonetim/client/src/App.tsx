@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -74,9 +74,14 @@ import AgencyDetail from "@/pages/admin/b2b/agencies/[id]";
 import type { FC } from "react";
 
 function Router() {
+  const [location] = useLocation();
+  // Admin sayfaları AdminLayout ile kendi başlık/kenar çubuğunu çiziyor;
+  // genel site Header/Footer'ı bunun üzerine binmemeli.
+  const isAdminArea = location.startsWith("/admin");
+
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      {!isAdminArea && <Header />}
       <main className="flex-1">
         <Switch>
           <Route path="/" component={BiletStyleHomePage} />
@@ -143,10 +148,10 @@ function Router() {
           <Route component={NotFound} />
         </Switch>
       </main>
-      <Footer />
+      {!isAdminArea && <Footer />}
       
       {/* WhatsApp Chat Uygulaması */}
-      <WhatsAppChat />
+      {!isAdminArea && <WhatsAppChat />}
     </div>
   );
 }

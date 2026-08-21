@@ -29,7 +29,7 @@ export function registerStripeDemoRoutes(router: Router) {
   router.get('/stripe/config', (req: Request, res: Response) => {
     try {
       // Test public key döndür (değiştirilmiş test anahtarı)
-      const publicKey = 'pk_test_51OofdPJlzrTrOb0wCQHOECu35wjQM2CtJubUNE8YXwWj06m1XRAc3ayYD9NnERAzkv5YjPp1gZ2STJKlnxysMaIC00X6MbM3Ut';
+      const publicKey = process.env.VITE_STRIPE_PUBLIC_KEY || '';
       res.json({ 
         publicKey,
         isDemoMode: stripeDemoService.isDemoMode()

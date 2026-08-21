@@ -99,7 +99,7 @@ import whatsAppChatbotService from './services/whatsapp/chatbot';
 import { aiRecommendationService } from './services/ai-recommendation';
 
 // Authentication middleware
-import { isAuthenticated, isAdmin } from './auth';
+import { isAuthenticated, isAdmin, resolveSessionUserId } from './auth';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -111,8 +111,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   
-  // WebSocket kullanıcı kimlik doğrulama önbelleği - performans iyileştirmesi
+  // WebSocket kullanıcı önbelleği - performans iyileştirmesi
   const userCache = new Map<number, CachedUser>();
+
+  /** Kullanıcıyı önbellekten, yoksa veritabanından yükler. */
+  const loadCachedUser = async (userId: number): Promise<CachedUser | null> => {
+    const cached = userCache.get(userId);
+    if (cached) {
+      cached.lastUsed = Date.now();
+      return cached;
+    }
+
+    const dbUser = await storage.getUser(userId, true);
+    if (!dbUser) return null;
+
+    const entry: CachedUser = {
+      id: dbUser.id,
+      username: dbUser.username,
+      role: dbUser.role || 'user',
+      lastUsed: Date.now()
+    };
+    userCache.set(userId, entry);
+    return entry;
+  };
   
   // Önbellek temizleme zamanlayıcısını ayarla (30 dakikada bir)
   const CACHE_TTL = 30 * 60 * 1000; // 30 dakika
@@ -371,11 +392,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerStripeDemoRoutes(stripeDemoRouter);
   app.use("/api", stripeDemoRouter);
   
-  // Initialize Stripe - using our improved service with demo mode
-  // Test değeri kullanıyoruz (Stripe test anahtarı)
-  const stripe = new Stripe('sk_test_REDACTED_SEE_COMMIT_MESSAGE', {
-    apiVersion: '2023-10-16' as any
-  });
+  // Stripe yalnızca ortam değişkeninde anahtar varsa başlatılır.
+  // Anahtar yoksa uygulama çökmez; Stripe'a bağlı uçlar devre dışı kalır.
+  if (!process.env.STRIPE_SECRET_KEY) {
+    console.warn('STRIPE_SECRET_KEY tanımlı değil - Stripe uçları devre dışı.');
+  }
+  const stripe = process.env.STRIPE_SECRET_KEY
+    ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' as any })
+    : (null as unknown as Stripe);
   
   // Sitemap ve robots.txt rotalarını kaydet
   app.use(sitemapRouter);
@@ -800,19 +824,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // B2B routes for agency management
   app.use('/api/b2b', b2bRouter);
   
-  // Kullanıcı profiline özel API endpoint'leri
-  app.get("/api/user/profile", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Bu işlem için giriş yapmanız gerekiyor" });
-    }
-    
-    try {
-      const profile = await storage.getUserProfileByUserId(req.user.id);
-      res.json(profile || {});
-    } catch (error) {
-      res.status(500).json({ error: "Profil bilgileri alınırken bir hata oluştu" });
-    }
-  });
   
   // Kullanıcının rezervasyonlarını getir
   app.get("/api/user/bookings", async (req, res) => {
@@ -1039,32 +1050,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Tüm bildirimleri okundu olarak işaretle
-  app.patch("/api/notifications/mark-all-read", async (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: "Bu işlem için giriş yapmanız gerekiyor" });
-    }
-    
-    try {
-      // Kullanıcının tüm bildirimlerini okundu olarak işaretle
-      const success = await storage.markAllNotificationsAsRead(req.user.id);
-      
-      if (success) {
-        // WebSocket üzerinden okunmamış bildirim sayısı 0 olarak bildir
-        broadcastToUser(req.user.id, {
-          type: 'unread_notifications_count',
-          count: 0
-        });
-        
-        res.json({ success: true, message: "Tüm bildirimler okundu olarak işaretlendi" });
-      } else {
-        res.status(500).json({ error: "Bildirimler işaretlenirken bir sorun oluştu" });
-      }
-    } catch (error) {
-      console.error("Bildirimler güncellenirken hata:", error);
-      res.status(500).json({ error: "Bildirimler güncellenirken bir hata oluştu" });
-    }
-  });
   
   // Admin için bildirim oluşturma endpointi
   app.post("/api/admin/notifications", isAdmin, async (req, res) => {
@@ -1108,16 +1093,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Admin için tüm bildirimleri getir
-  app.get("/api/admin/notifications", isAdmin, async (req, res) => {
-    try {
-      const notifications = await storage.getAllNotifications();
-      res.json(notifications);
-    } catch (error) {
-      console.error("Bildirimler alınırken hata:", error);
-      res.status(500).json({ error: "Bildirimler alınırken bir hata oluştu" });
-    }
-  });
   
   // Admin için bildirim silme endpointi
   app.delete("/api/admin/notifications/:id", isAdmin, async (req, res) => {
@@ -1536,16 +1511,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupPingInterval();
   
   // WebSocket Sunucusu - Performans iyileştirmeleri
-  wss.on('connection', (ws: CustomWebSocket) => {
-    console.log('Client connected to WebSocket');
-    
+  wss.on('connection', async (ws: CustomWebSocket, upgradeRequest) => {
     // Initialize subscriptions and role with performance optimizations
     ws.campaignSubscriptions = [];
     ws.role = 'guest';
     ws.userId = null; // Kullanıcı kimliği için yer tutucu
     ws.isAlive = true; // Bağlantı sağlık durumu takibi
     ws.lastActivity = Date.now(); // Zaman aşımı yönetimi için son aktivite takibi
-    ws.authToken = ''; // Kimlik doğrulama tokeni
+
+    // Kimlik YALNIZCA imzalı oturum çerezinden çözülür.
+    // İstemcinin gönderdiği userId'ye hiçbir koşulda güvenilmez.
+    const sessionUserId = await resolveSessionUserId(upgradeRequest);
+    if (sessionUserId !== null) {
+      const sessionUser = await loadCachedUser(sessionUserId);
+      if (sessionUser) {
+        ws.userId = sessionUserId;
+        ws.role = sessionUser.role;
+      }
+    }
     
     // Performans monitörleme
     const connectionStartTime = performance.now();
@@ -1598,77 +1581,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return;
         }
         
-        // Handle auth messages with caching optimization
+        // Kimlik doğrulama artık bağlantı anında oturum çerezinden yapılıyor.
+        // Bu mesaj yalnızca istemcinin mevcut durumu sorgulamasına yarar;
+        // gönderilen herhangi bir userId dikkate alınmaz.
         else if (data.type === 'auth') {
-          // Kullanıcı kimlik doğrulama işlemi
-          if (data.userId) {
-            try {
-              const userId = parseInt(data.userId);
-              let user;
-              let fromCache = false;
-              
-              // Önce önbellekte kullanıcıyı ara
-              if (userCache.has(userId)) {
-                user = userCache.get(userId);
-                fromCache = true;
-                // Önbellek kullanım zamanını güncelle
-                userCache.get(userId)!.lastUsed = Date.now();
-                // console.log(`WebSocket auth: User ${userId} found in cache`);
-              } else {
-                // Kullanıcı önbellekte yoksa veritabanından getir
-                const dbUser = await storage.getUser(userId, true); // 'true' parametresi önbelleklemeyi etkinleştirir
-                
-                if (dbUser) {
-                  // Kullanıcıyı önbelleğe ekle
-                  user = {
-                    id: dbUser.id,
-                    username: dbUser.username,
-                    role: dbUser.role || 'user',
-                    lastUsed: Date.now()
-                  };
-                  userCache.set(userId, user);
-                  // console.log(`WebSocket auth: User ${userId} added to cache`);
-                }
-              }
-              
-              if (user) {
-                // Kullanıcı bilgilerini WebSocket'e kaydet
-                ws.userId = userId;
-                ws.role = user.role;
-                
-                // Başarılı cevap gönder
-                ws.send(JSON.stringify({ 
-                  type: 'auth_success', 
-                  userId: ws.userId,
-                  role: ws.role,
-                  message: `Kimlik doğrulama başarılı. Kullanıcı ID: ${ws.userId}`
-                }));
-                
-                // Okunmamış bildirim sayısını gönder
-                const unreadCount = await storage.getUnreadNotificationsCount(userId);
-                ws.send(JSON.stringify({
-                  type: 'unread_notifications_count',
-                  count: unreadCount
-                }));
-                
-                console.log(`WebSocket kullanıcı kimliği doğrulandı: ${userId} (${user.username})${fromCache ? ' [Önbellekten]' : ''}`);
-              } else {
-                ws.send(JSON.stringify({ 
-                  type: 'auth_error', 
-                  message: 'Kullanıcı bulunamadı'
-                }));
-              }
-            } catch (error) {
-              console.error('WebSocket kimlik doğrulama hatası:', error);
-              ws.send(JSON.stringify({ 
-                type: 'auth_error', 
-                message: 'Kimlik doğrulama hatası'
-              }));
-            }
+          if (ws.userId === null) {
+            ws.send(JSON.stringify({
+              type: 'auth_error',
+              message: 'Oturum bulunamadı. Lütfen giriş yapın.'
+            }));
           } else {
-            ws.send(JSON.stringify({ 
-              type: 'auth_error', 
-              message: 'Geçersiz kimlik bilgileri'
+            ws.send(JSON.stringify({
+              type: 'auth_success',
+              userId: ws.userId,
+              role: ws.role,
+              message: 'Kimlik doğrulama başarılı.'
+            }));
+
+            const unreadCount = await storage.getUnreadNotificationsCount(ws.userId);
+            ws.send(JSON.stringify({
+              type: 'unread_notifications_count',
+              count: unreadCount
             }));
           }
         }
@@ -5388,6 +5321,33 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
     }
   });
   
+  // Gelişmiş dashboard'ın özet raporu.
+  // Bu endpoint eksikti; istemci HTML alıp JSON parse hatası veriyordu.
+  app.get("/api/admin/reports/summary", isAdmin, async (req: Request, res: Response) => {
+    try {
+      const period = parseInt(req.query.period as string) || 30;
+      const endDate = new Date();
+      const startDate = new Date(Date.now() - period * 24 * 60 * 60 * 1000);
+
+      const { reportingService } = await import('./services/reporting');
+      const [sales, occupancy] = await Promise.all([
+        reportingService.generateSalesReport({ startDate, endDate }),
+        reportingService.generateOccupancyReport({ startDate, endDate }),
+      ]);
+
+      res.json({
+        period,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        sales,
+        occupancy,
+      });
+    } catch (error) {
+      console.error("Özet rapor oluşturma hatası:", error);
+      res.status(500).json({ message: "Özet rapor oluşturulamadı" });
+    }
+  });
+
   app.get("/api/admin/reports/sales", async (req, res) => {
     try {
       if (req.user?.role !== "admin") {
@@ -5399,7 +5359,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       const includeUnpaid = req.query.includeUnpaid === 'true';
       
       const { reportingService } = await import('./services/reporting');
-      const report = await reportingService.generateSalesReport(startDate, endDate, includeUnpaid);
+      const report = await reportingService.generateSalesReport({ startDate, endDate });
       
       res.json(report);
     } catch (error) {
@@ -5417,7 +5377,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
       
       const { reportingService } = await import('./services/reporting');
-      const report = await reportingService.generateOccupancyReport(startDate, endDate);
+      const report = await reportingService.generateOccupancyReport({ startDate, endDate });
       
       res.json(report);
     } catch (error) {
@@ -5790,52 +5750,6 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
     }
   });
   
-  // Performance Analytics API Endpoint
-  app.get("/api/admin/analytics/performance", async (req, res) => {
-    try {
-      if (req.user?.role !== "admin") {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-      
-      const period = req.query.period ? parseInt(req.query.period as string) : 30;
-      
-      // Create analytics service instance and get metrics
-      const analyticsService = new AnalyticsService(storage);
-      const performanceMetrics = await analyticsService.getPerformanceMetrics(period);
-      
-      res.json(performanceMetrics);
-    } catch (error) {
-      console.error("Error generating performance metrics:", error);
-      res.status(500).json({ message: "Failed to generate performance metrics" });
-    }
-  });
-
-  // API Endpoint'leri: Admin Panel Yönetimi
-  app.patch("/api/admin/users/:id/role", async (req, res) => {
-    try {
-      if (req.user?.role !== "admin") {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-      
-      const userId = parseInt(req.params.id);
-      const { role } = req.body;
-      
-      if (!userId || !['user', 'admin'].includes(role)) {
-        return res.status(400).json({ message: "Invalid user ID or role" });
-      }
-      
-      const { adminService } = await import('./services/admin');
-      const result = await adminService.changeUserRole(userId, role);
-      
-      if (result.success) {
-        res.json(result);
-      } else {
-        res.status(400).json(result);
-      }
-    } catch (error) {
-      res.status(500).json({ message: "Failed to change user role", error: String(error) });
-    }
-  });
   
   app.patch("/api/admin/bookings/:id/status", async (req, res) => {
     try {
@@ -6240,68 +6154,6 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
     }
   });
   
-  // Ticket generation endpoint
-  app.post("/api/bookings/:id/generate-ticket", async (req, res) => {
-    try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Not authenticated" });
-      }
-      
-      const id = parseInt(req.params.id);
-      const booking = await storage.getBooking(id);
-      
-      if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
-      }
-      
-      // Only allow own ticket generation unless admin
-      if (booking.userId !== req.user!.id && !req.user?.role === "admin") {
-        return res.status(403).json({ message: "Unauthorized" });
-      }
-      
-      if (booking.status !== 'confirmed') {
-        return res.status(400).json({ message: "Can only generate tickets for confirmed bookings" });
-      }
-      
-      // Get related data for ticket
-      const route = await storage.getRoute(booking.routeId);
-      const bookingPassengers = await storage.getBookingPassengers(booking.id);
-      const bookingVehicle = await storage.getBookingVehicle(booking.id);
-      
-      // Generate ticket data
-      const departureTime = new Date(booking.departureDate).toLocaleTimeString();
-      
-      const ticketUrl = await ticketGeneratorService.generateTicket({
-        bookingReference: booking.bookingReference,
-        pnrNumber: booking.pnrNumber,
-        passengerName: req.user!.name || req.user!.username,
-        departurePort: route.departurePort,
-        arrivalPort: route.arrivalPort,
-        departureDate: booking.departureDate,
-        departureTime: departureTime,
-        passengers: bookingPassengers.map(p => ({
-          firstName: p.firstName,
-          lastName: p.lastName,
-          passengerType: p.passengerType
-        })),
-        vehicles: bookingVehicle ? [{
-          vehicleType: bookingVehicle.vehicleType,
-          licensePlate: bookingVehicle.licensePlate
-        }] : [],
-        totalPrice: booking.totalPrice,
-        paymentStatus: booking.isPaid ? 'Paid' : 'Unpaid'
-      });
-      
-      res.json({ 
-        ticketUrl,
-        message: "Ticket generated successfully" 
-      });
-    } catch (error) {
-      console.error("Error generating ticket:", error);
-      res.status(500).json({ message: "Failed to generate ticket" });
-    }
-  });
-
   // Campaign Management API
 
   // Campaigns API
@@ -7668,22 +7520,6 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       res.status(500).json({ 
         success: false, 
         message: "Yedekleme silinirken bir hata oluştu", 
-        error: error.message 
-      });
-    }
-  });
-
-  // Backoffice API rotaları sorgulama
-  app.get("/api/backoffice/routes", async (req, res) => {
-    try {
-      const { backofficeApiService } = require("./services/backoffice-api");
-      const routes = await backofficeApiService.getRoutes();
-      res.status(200).json(routes);
-    } catch (error) {
-      console.error("Backoffice API rota sorgulama hatası:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Rota bilgileri alınamadı", 
         error: error.message 
       });
     }
@@ -9797,118 +9633,9 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
     }
   });
   
-  // Mars Routes API
-  app.get("/api/admin/mars-routes", isAdmin, async (req, res) => {
-    try {
-      // Demo veriler dönelim şimdilik
-      res.json([
-        {
-          id: 1,
-          name: "Mars Express",
-          description: "Dünya'dan Mars'a direkt ultrasonik feribot seferi",
-          imageUrl: "https://images.unsplash.com/photo-1614728894747-a83421e2b9c9?q=80&w=1974&auto=format&fit=crop",
-          departureTerminal: "Dünya Terminal 1",
-          arrivalTerminal: "Mars Olympus Terminal",
-          journeyTime: "4 saat",
-          price: "12500",
-          capacity: "200",
-          isActive: true,
-          tags: ["express", "luxury"],
-          departureSchedules: [
-            {
-              time: "09:00",
-              days: ["mon", "wed", "fri"]
-            },
-            {
-              time: "15:00",
-              days: ["tue", "thu", "sat"]
-            }
-          ],
-          launchDate: "2023-12-01",
-          returnDate: null
-        },
-        {
-          id: 2,
-          name: "Mars Voyager",
-          description: "Konforlu ve ekonomik Mars yolculuğu",
-          imageUrl: "https://images.unsplash.com/photo-1630694093867-4b1bcbae5f0c?q=80&w=1932&auto=format&fit=crop",
-          departureTerminal: "Dünya Terminal 2",
-          arrivalTerminal: "Mars Valles Terminal",
-          journeyTime: "6 saat",
-          price: "9000",
-          capacity: "250",
-          isActive: true,
-          tags: ["economy", "family"],
-          departureSchedules: [
-            {
-              time: "10:30",
-              days: ["mon", "tue", "wed", "thu", "fri"]
-            }
-          ],
-          launchDate: "2024-01-15",
-          returnDate: null
-        },
-        {
-          id: 3,
-          name: "Mars Kolonizasyon Programı",
-          description: "Uzun süreli Mars yerleşimi için özel taşıma hizmeti",
-          imageUrl: "https://images.unsplash.com/photo-1630694092174-9eeaec3b6f0a?q=80&w=1932&auto=format&fit=crop",
-          departureTerminal: "Dünya Gateway",
-          arrivalTerminal: "Mars Kolonisi",
-          journeyTime: "5 saat",
-          price: "15000",
-          capacity: "150",
-          isActive: false,
-          tags: ["settlement", "research"],
-          departureSchedules: [],
-          launchDate: "2024-06-01",
-          returnDate: null
-        }
-      ]);
-    } catch (error) {
-      console.error("Mars rotaları hatası:", error);
-      res.status(500).json({ message: "Mars rotaları alınamadı" });
-    }
-  });
   
-  app.post("/api/admin/mars-routes", isAdmin, async (req, res) => {
-    try {
-      // Yeni Mars rotasını kaydediyormuş gibi yapalım
-      res.status(201).json({
-        id: Math.floor(Math.random() * 1000) + 10,
-        ...req.body,
-        createdAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Mars rotası oluşturma hatası:", error);
-      res.status(500).json({ message: "Mars rotası oluşturulamadı" });
-    }
-  });
   
-  app.put("/api/admin/mars-routes/:id", isAdmin, async (req, res) => {
-    try {
-      // Mars rotasını güncelliyormuş gibi yapalım
-      res.json({
-        id: parseInt(req.params.id),
-        ...req.body,
-        updatedAt: new Date().toISOString()
-      });
-    } catch (error) {
-      console.error("Mars rotası güncelleme hatası:", error);
-      res.status(500).json({ message: "Mars rotası güncellenemedi" });
-    }
-  });
   
-  app.delete("/api/admin/mars-routes/:id", isAdmin, async (req, res) => {
-    try {
-      // Mars rotasını siliyormuş gibi yapalım
-      res.json({ success: true, message: "Mars rotası başarıyla silindi" });
-    } catch (error) {
-      console.error("Mars rotası silme hatası:", error);
-      res.status(500).json({ message: "Mars rotası silinemedi" });
-    }
-  });
-
   // Admin Settings API
   app.get("/api/admin/settings", isAdmin, async (req, res) => {
     try {

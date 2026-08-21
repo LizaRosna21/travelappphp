@@ -1,3 +1,7 @@
+// Ortam değişkenlerini .env dosyasından yükle.
+// dotenv bağımlılıklarda vardı ama hiçbir yerde import edilmiyordu, bu yüzden
+// .env dosyası hiç okunmuyordu.
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 // CustomRequestInterface with rawBody for Stripe webhook validation
 declare global {
@@ -73,10 +77,9 @@ app.use((req, res, next) => {
     serveStatic(app);
   }
 
-  // ALWAYS serve the app on port 5000
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
-  const port = 5000;
+  // API ve istemci aynı porttan servis edilir.
+  // Varsayılan 5000; PORT ortam değişkeniyle değiştirilebilir.
+  const port = Number(process.env.PORT) || 5000;
   server.listen({
     port,
     host: "0.0.0.0",

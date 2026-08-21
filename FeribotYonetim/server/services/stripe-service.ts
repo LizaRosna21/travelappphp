@@ -1,12 +1,15 @@
 import Stripe from 'stripe';
 
-// Using test keys for development (updated test key)
-const TEST_SECRET_KEY = 'sk_test_REDACTED_SEE_COMMIT_MESSAGE';
+// API anahtarı yalnızca ortam değişkeninden okunur; kaynak koda gömülmez.
+const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
-// Initialize Stripe with the test key 
-const stripe = new Stripe(TEST_SECRET_KEY, {
-  apiVersion: '2023-10-16' as any,
-});
+if (!STRIPE_SECRET_KEY) {
+  console.warn('STRIPE_SECRET_KEY tanımlı değil - Stripe servisi devre dışı.');
+}
+
+const stripe = STRIPE_SECRET_KEY
+  ? new Stripe(STRIPE_SECRET_KEY, { apiVersion: '2023-10-16' as any })
+  : (null as unknown as Stripe);
 
 export class StripeService {
   /**
