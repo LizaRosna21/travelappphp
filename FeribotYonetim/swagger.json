@@ -1,0 +1,1873 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Remotely API",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/AgentUpdate/DownloadPackage/{platform}": {
+      "get": {
+        "tags": [
+          "AgentUpdate"
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/AgentUpdate/DownloadPackage/{platform}/{downloadId}": {
+      "get": {
+        "tags": [
+          "AgentUpdate"
+        ],
+        "parameters": [
+          {
+            "name": "platform",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "downloadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/Alerts/Create": {
+      "post": {
+        "tags": [
+          "Alerts"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertOptions"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertOptions"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Alerts/Delete/{alertID}": {
+      "delete": {
+        "tags": [
+          "Alerts"
+        ],
+        "parameters": [
+          {
+            "name": "alertID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Alerts/DeleteAll": {
+      "delete": {
+        "tags": [
+          "Alerts"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Branding/{organizationId}": {
+      "get": {
+        "tags": [
+          "Branding"
+        ],
+        "parameters": [
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandingInfo"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandingInfo"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandingInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Branding": {
+      "get": {
+        "tags": [
+          "Branding"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandingInfo"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandingInfo"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BrandingInfo"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ClientDownloads/desktop/{platformID}": {
+      "get": {
+        "tags": [
+          "ClientDownloads"
+        ],
+        "parameters": [
+          {
+            "name": "platformID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/ClientDownloads/desktop/{platformId}/{organizationId}": {
+      "get": {
+        "tags": [
+          "ClientDownloads"
+        ],
+        "parameters": [
+          {
+            "name": "platformId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/ClientDownloads/{platformID}": {
+      "get": {
+        "tags": [
+          "ClientDownloads"
+        ],
+        "parameters": [
+          {
+            "name": "platformID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/ClientDownloads/{organizationID}/{platformID}": {
+      "get": {
+        "tags": [
+          "ClientDownloads"
+        ],
+        "parameters": [
+          {
+            "name": "organizationID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "platformID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Devices": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Device"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Device"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Device"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Devices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceSetupOptions"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceSetupOptions"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceSetupOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Devices"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceSetupOptions"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceSetupOptions"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceSetupOptions"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Devices/{id}": {
+      "get": {
+        "tags": [
+          "Devices"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Device"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Device"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Device"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/FileSharing/{id}": {
+      "get": {
+        "tags": [
+          "FileSharing"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/FileSharing": {
+      "post": {
+        "tags": [
+          "FileSharing"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/HealthCheck": {
+      "get": {
+        "tags": [
+          "HealthCheck"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/Login/Logout": {
+      "get": {
+        "tags": [
+          "Login"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/Login": {
+      "post": {
+        "tags": [
+          "Login"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiLogin"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiLogin"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApiLogin"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/OrganizationManagement/ChangeIsAdmin/{userID}": {
+      "post": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/DeleteInvite/{inviteID}": {
+      "delete": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "parameters": [
+          {
+            "name": "inviteID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/DeleteUser/{userID}": {
+      "delete": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/DeviceGroup": {
+      "get": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceGroup"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceGroup"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeviceGroup"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/DeviceGroup/{groupID}/Users": {
+      "delete": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "parameters": [
+          {
+            "name": "groupID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "parameters": [
+          {
+            "name": "groupID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/GenerateResetUrl/{userID}": {
+      "get": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/Name": {
+      "put": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "string"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/SetDefault": {
+      "put": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "boolean"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/OrganizationManagement/SendInvite": {
+      "post": {
+        "tags": [
+          "OrganizationManagement"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteViewModel"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteViewModel"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/InviteViewModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/RemoteControl/{deviceID}": {
+      "get": {
+        "tags": [
+          "RemoteControl"
+        ],
+        "parameters": [
+          {
+            "name": "deviceID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/RemoteControl": {
+      "post": {
+        "tags": [
+          "RemoteControl"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoteControlRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoteControlRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoteControlRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/api/SavedScripts/{scriptId}": {
+      "get": {
+        "tags": [
+          "SavedScripts"
+        ],
+        "parameters": [
+          {
+            "name": "scriptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedScript"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedScript"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SavedScript"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/Scripting/ExecuteCommand/{mode}/{deviceID}": {
+      "post": {
+        "tags": [
+          "Scripting"
+        ],
+        "parameters": [
+          {
+            "name": "mode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceID",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResult"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResult"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ScriptResults": {
+      "get": {
+        "tags": [
+          "ScriptResults"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "ScriptResults"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptResultDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptResultDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScriptResultDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResultResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResultResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScriptResultResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ScriptResults/{scriptId}": {
+      "get": {
+        "tags": [
+          "ScriptResults"
+        ],
+        "parameters": [
+          {
+            "name": "scriptId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ServerLogs/Download": {
+      "get": {
+        "tags": [
+          "ServerLogs"
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Alert": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdOn": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "deviceID": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationID": {
+            "type": "string",
+            "nullable": true
+          },
+          "userID": {
+            "type": "string",
+            "nullable": true
+          },
+          "details": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "AlertOptions": {
+        "type": "object",
+        "properties": {
+          "alertDeviceID": {
+            "type": "string",
+            "nullable": true
+          },
+          "alertMessage": {
+            "type": "string",
+            "nullable": true
+          },
+          "apiRequestBody": {
+            "type": "string",
+            "nullable": true
+          },
+          "apiRequestHeaders": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string",
+              "nullable": true
+            },
+            "nullable": true
+          },
+          "apiRequestMethod": {
+            "type": "string",
+            "nullable": true
+          },
+          "apiRequestUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailBody": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailSubject": {
+            "type": "string",
+            "nullable": true
+          },
+          "emailTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "shouldAlert": {
+            "type": "boolean"
+          },
+          "shouldEmail": {
+            "type": "boolean"
+          },
+          "shouldSendApiRequest": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApiLogin": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Architecture": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "BrandingInfo": {
+        "type": "object",
+        "properties": {
+          "icon": {
+            "type": "string",
+            "format": "byte",
+            "nullable": true
+          },
+          "product": {
+            "maxLength": 25,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Device": {
+        "type": "object",
+        "properties": {
+          "agentVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "alerts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Alert"
+            },
+            "nullable": true
+          },
+          "alias": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "cpuUtilization": {
+            "type": "number",
+            "format": "double"
+          },
+          "currentUser": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceGroup": {
+            "$ref": "#/components/schemas/DeviceGroup"
+          },
+          "deviceGroupID": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceName": {
+            "type": "string",
+            "nullable": true
+          },
+          "drives": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Drive"
+            },
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "is64Bit": {
+            "type": "boolean"
+          },
+          "isOnline": {
+            "type": "boolean"
+          },
+          "lastOnline": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "macAddresses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "notes": {
+            "maxLength": 5000,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "organizationID": {
+            "type": "string",
+            "nullable": true
+          },
+          "osArchitecture": {
+            "$ref": "#/components/schemas/Architecture"
+          },
+          "osDescription": {
+            "type": "string",
+            "nullable": true
+          },
+          "platform": {
+            "type": "string",
+            "nullable": true
+          },
+          "processorCount": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "publicIP": {
+            "type": "string",
+            "nullable": true
+          },
+          "serverVerificationToken": {
+            "type": "string",
+            "nullable": true
+          },
+          "tags": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "totalMemory": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalStorage": {
+            "type": "number",
+            "format": "double"
+          },
+          "usedMemory": {
+            "type": "number",
+            "format": "double"
+          },
+          "usedMemoryPercent": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "usedStorage": {
+            "type": "number",
+            "format": "double"
+          },
+          "usedStoragePercent": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeviceGroup": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationID": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeviceSetupOptions": {
+        "type": "object",
+        "properties": {
+          "deviceAlias": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceGroupName": {
+            "type": "string",
+            "nullable": true
+          },
+          "deviceID": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationID": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "Drive": {
+        "type": "object",
+        "properties": {
+          "driveType": {
+            "$ref": "#/components/schemas/DriveType"
+          },
+          "rootDirectory": {
+            "type": "string",
+            "nullable": true
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "driveFormat": {
+            "type": "string",
+            "nullable": true
+          },
+          "freeSpace": {
+            "type": "number",
+            "format": "double"
+          },
+          "totalSize": {
+            "type": "number",
+            "format": "double"
+          },
+          "volumeLabel": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DriveType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "InviteViewModel": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "dateSent": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "invitedUser": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RemoteControlRequest": {
+        "type": "object",
+        "properties": {
+          "deviceID": {
+            "type": "string",
+            "nullable": true
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "password": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "SavedScript": {
+        "required": [
+          "content",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "content": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "creatorId": {
+            "type": "string",
+            "nullable": true
+          },
+          "folderPath": {
+            "maxLength": 200,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "generateAlertOnError": {
+            "type": "boolean"
+          },
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "isPublic": {
+            "type": "boolean"
+          },
+          "isQuickScript": {
+            "type": "boolean"
+          },
+          "name": {
+            "maxLength": 100,
+            "minLength": 0,
+            "type": "string"
+          },
+          "organizationID": {
+            "type": "string",
+            "nullable": true
+          },
+          "sendEmailOnError": {
+            "type": "boolean"
+          },
+          "sendErrorEmailTo": {
+            "type": "string",
+            "format": "email",
+            "nullable": true
+          },
+          "shell": {
+            "$ref": "#/components/schemas/ScriptingShell"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScriptInputType": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "ScriptResult": {
+        "type": "object",
+        "properties": {
+          "deviceID": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorOutput": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "hadErrors": {
+            "type": "boolean"
+          },
+          "inputType": {
+            "$ref": "#/components/schemas/ScriptInputType"
+          },
+          "runTime": {
+            "$ref": "#/components/schemas/TimeSpan"
+          },
+          "scriptInput": {
+            "type": "string",
+            "nullable": true
+          },
+          "scheduleId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "savedScriptId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "scriptRunId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "senderConnectionID": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderUserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "shell": {
+            "$ref": "#/components/schemas/ScriptingShell"
+          },
+          "standardOutput": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "timeStamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "organizationID": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScriptResultDto": {
+        "type": "object",
+        "properties": {
+          "deviceID": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorOutput": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "hadErrors": {
+            "type": "boolean"
+          },
+          "inputType": {
+            "$ref": "#/components/schemas/ScriptInputType"
+          },
+          "runTime": {
+            "$ref": "#/components/schemas/TimeSpan"
+          },
+          "scriptInput": {
+            "type": "string",
+            "nullable": true
+          },
+          "scheduleId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "savedScriptId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "scriptRunId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "senderConnectionID": {
+            "type": "string",
+            "nullable": true
+          },
+          "senderUserName": {
+            "type": "string",
+            "nullable": true
+          },
+          "shell": {
+            "$ref": "#/components/schemas/ScriptingShell"
+          },
+          "standardOutput": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "nullable": true
+          },
+          "timeStamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScriptResultResponse": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ScriptingShell": {
+        "enum": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "type": "integer",
+        "format": "int32"
+      },
+      "TimeSpan": {
+        "type": "object",
+        "properties": {
+          "ticks": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "days": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "hours": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "milliseconds": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "microseconds": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "nanoseconds": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "minutes": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "seconds": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
+          },
+          "totalDays": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "totalHours": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "totalMilliseconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "totalMicroseconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "totalNanoseconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "totalMinutes": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          },
+          "totalSeconds": {
+            "type": "number",
+            "format": "double",
+            "readOnly": true
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}
