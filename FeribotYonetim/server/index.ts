@@ -1,3 +1,7 @@
+// .env dosyasını yükle. KURULUM_KILAVUZU.md kullanıcıya DATABASE_URL ve
+// SESSION_SECRET değerlerini .env içine yazmasını söylüyor, ancak dotenv
+// hiçbir yerde çağrılmadığı için bu dosya okunmuyordu.
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 // CustomRequestInterface with rawBody for Stripe webhook validation
 declare global {

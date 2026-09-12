@@ -103,40 +103,43 @@ const RevenueManagement: React.FC = () => {
 
   // Dynamic Pricing Rules
   const { data: pricingRules, isLoading: loadingRules } = useQuery({
-    queryKey: ['/api/revenue/pricing-rules'],
+    queryKey: ['/api/admin/revenue/pricing-rules'],
     select: (data) => data || [],
     enabled: activeTab === 'dynamic-pricing' || activeTab === 'dashboard',
   });
 
   // Seasonal Factors
   const { data: seasonalFactors, isLoading: loadingFactors } = useQuery({
-    queryKey: ['/api/revenue/seasonal-factors'],
+    queryKey: ['/api/admin/revenue/seasonal-factors'],
     select: (data) => data || [],
     enabled: activeTab === 'seasonal-factors' || activeTab === 'dashboard',
   });
 
   // Special Events
   const { data: specialEvents, isLoading: loadingEvents } = useQuery({
-    queryKey: ['/api/revenue/special-events'],
+    queryKey: ['/api/admin/revenue/special-events'],
     select: (data) => data || [],
     enabled: activeTab === 'special-events' || activeTab === 'dashboard',
   });
 
   // Price History
   const { data: priceHistory, isLoading: loadingPriceHistory } = useQuery({
-    queryKey: ['/api/revenue/price-history', selectedRoute, dateRange.startDate, dateRange.endDate],
+    queryKey: [`/api/admin/revenue/price-history?routeId=${selectedRoute}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`],
     select: (data) => data || [],
     enabled: activeTab === 'price-history' && selectedRoute !== null,
   });
 
   // Yield Management Settings
   const { data: yieldSettings, isLoading: loadingYieldSettings } = useQuery({
-    queryKey: ['/api/revenue/yield-settings'],
+    queryKey: ['/api/admin/revenue/yield-settings'],
     select: (data) => data || [],
     enabled: activeTab === 'yield-management' || activeTab === 'dashboard',
   });
 
   // Revenue Analysis
+  // NOT: Sunucu tarafındaki karşılığı POST /api/admin/revenue/reports/revenue
+  // olup henüz uygulanmadı (501 döner). Rapor üretimi yazıldığında bu sorgu
+  // POST'a uygun özel bir queryFn ile o uca bağlanmalıdır.
   const { data: revenueAnalysis, isLoading: loadingAnalysis } = useQuery({
     queryKey: ['/api/revenue/analysis', selectedRoute ? [selectedRoute] : null, dateRange.startDate, dateRange.endDate],
     select: (data) => data || { summary: {}, details: { bookings: [] } },
@@ -145,7 +148,7 @@ const RevenueManagement: React.FC = () => {
 
   // Revenue forecasts
   const { data: revenueForecasts, isLoading: loadingForecasts } = useQuery({
-    queryKey: ['/api/revenue/forecasts', selectedRoute],
+    queryKey: [`/api/admin/revenue/demand-forecasts?routeId=${selectedRoute}&startDate=${dateRange.startDate}&endDate=${dateRange.endDate}`],
     select: (data) => data || [],
     enabled: activeTab === 'forecasts' && selectedRoute !== null,
   });
@@ -219,12 +222,12 @@ const RevenueManagement: React.FC = () => {
   // Mutations
   const createPricingRuleMutation = useMutation({
     mutationFn: async (data: z.infer<typeof dynamicPricingSchema>) => {
-      const res = await apiRequest('POST', '/api/revenue/pricing-rules', data);
+      const res = await apiRequest('POST', '/api/admin/revenue/pricing-rules', data);
       return res.json();
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Dynamic pricing rule created successfully.' });
-      queryClient.invalidateQueries({ queryKey: ['/api/revenue/pricing-rules'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/revenue/pricing-rules'] });
       dynamicPricingForm.reset();
     },
     onError: (error: Error) => {
@@ -234,12 +237,12 @@ const RevenueManagement: React.FC = () => {
 
   const createSeasonalFactorMutation = useMutation({
     mutationFn: async (data: z.infer<typeof seasonalFactorSchema>) => {
-      const res = await apiRequest('POST', '/api/revenue/seasonal-factors', data);
+      const res = await apiRequest('POST', '/api/admin/revenue/seasonal-factors', data);
       return res.json();
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Seasonal factor created successfully.' });
-      queryClient.invalidateQueries({ queryKey: ['/api/revenue/seasonal-factors'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/revenue/seasonal-factors'] });
       seasonalFactorForm.reset();
     },
     onError: (error: Error) => {
@@ -249,12 +252,12 @@ const RevenueManagement: React.FC = () => {
 
   const createSpecialEventMutation = useMutation({
     mutationFn: async (data: z.infer<typeof specialEventSchema>) => {
-      const res = await apiRequest('POST', '/api/revenue/special-events', data);
+      const res = await apiRequest('POST', '/api/admin/revenue/special-events', data);
       return res.json();
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Special event created successfully.' });
-      queryClient.invalidateQueries({ queryKey: ['/api/revenue/special-events'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/revenue/special-events'] });
       specialEventForm.reset();
     },
     onError: (error: Error) => {
@@ -264,12 +267,12 @@ const RevenueManagement: React.FC = () => {
 
   const saveYieldSettingsMutation = useMutation({
     mutationFn: async (data: z.infer<typeof yieldManagementSchema>) => {
-      const res = await apiRequest('POST', '/api/revenue/yield-settings', data);
+      const res = await apiRequest('POST', '/api/admin/revenue/yield-settings', data);
       return res.json();
     },
     onSuccess: () => {
       toast({ title: 'Success', description: 'Yield management settings saved successfully.' });
-      queryClient.invalidateQueries({ queryKey: ['/api/revenue/yield-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/admin/revenue/yield-settings'] });
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -278,7 +281,7 @@ const RevenueManagement: React.FC = () => {
 
   const generatePricePlanMutation = useMutation({
     mutationFn: async (routeId: number) => {
-      const res = await apiRequest('POST', `/api/revenue/generate-price-plan/${routeId}`);
+      const res = await apiRequest('GET', `/api/admin/revenue/optimized-pricing/${routeId}`);
       return res.json();
     },
     onSuccess: (data) => {
@@ -292,7 +295,7 @@ const RevenueManagement: React.FC = () => {
 
   const analyzeRouteMutation = useMutation({
     mutationFn: async (routeId: number) => {
-      const res = await apiRequest('GET', `/api/revenue/analyze-route/${routeId}`);
+      const res = await apiRequest('GET', `/api/admin/revenue/route-performance/${routeId}`);
       return res.json();
     },
     onSuccess: (data) => {

@@ -51,6 +51,11 @@ import { ticketGeneratorService } from "./services/ticket-generator";
 import { stripeService } from "./services/stripe-service";
 import { generateBookingReference, generatePNR } from "./services/pnr-generator";
 import { revenueManagement } from "./services/revenue-management";
+// /api/admin/revenue/* uçlarının çağırdığı servis (daha önce tanımsızdı)
+import {
+  revenueAdminService as revenueManagementService,
+  isNotImplementedError,
+} from "./services/revenue-admin";
 import whatsappService from "./services/whatsapp";
 import whatsappNotificationService from "./services/whatsapp/notifications";
 import { whatsAppBusinessService as whatsappBusinessService } from "./services/whatsapp/business-api";
@@ -8640,6 +8645,9 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       
       res.json(report);
     } catch (error) {
+      if (isNotImplementedError(error)) {
+        return res.status(501).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to generate revenue report" });
     }
   });
@@ -8654,6 +8662,9 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       const analysis = await revenueManagementService.analyzeRoutePerformance(routeId);
       res.json(analysis);
     } catch (error) {
+      if (isNotImplementedError(error)) {
+        return res.status(501).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to analyze route performance" });
     }
   });
@@ -8670,6 +8681,9 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       const plan = await revenueManagementService.generateOptimizedPricingPlan(routeId, daysInAdvance);
       res.json(plan);
     } catch (error) {
+      if (isNotImplementedError(error)) {
+        return res.status(501).json({ message: error.message });
+      }
       res.status(500).json({ message: "Failed to generate optimized pricing plan" });
     }
   });
