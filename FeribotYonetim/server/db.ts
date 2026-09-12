@@ -1,5 +1,7 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
+import { Pool as NeonPool, neonConfig } from '@neondatabase/serverless';
+import { drizzle as drizzleNeon } from 'drizzle-orm/neon-serverless';
+import pg from 'pg';
+import { drizzle as drizzleNodePostgres } from 'drizzle-orm/node-postgres';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
@@ -11,20 +13,47 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Optimize database connection pool
-export const pool = new Pool({ 
-  connectionString: process.env.DATABASE_URL,
+const connectionString = process.env.DATABASE_URL;
+
+/**
+ * Neon sunucusuz sürücüsü yalnızca Neon'un WebSocket proxy'si üzerinden
+ * konuşabilir; kendi sunucunuzdaki ya da localhost'taki bir PostgreSQL'e
+ * bağlanamaz. KURULUM_KILAVUZU.md ise kullanıcıya yerel PostgreSQL kurup
+ * DATABASE_URL'i ona yöneltmesini söylüyor. Bu yüzden sürücü, bağlantı
+ * adresine bakılarak seçiliyor.
+ */
+function isNeonConnection(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host.endsWith('.neon.tech') || host.endsWith('.neon.build');
+  } catch {
+    return false;
+  }
+}
+
+const POOL_SETTINGS = {
   max: 20, // Maksimum bağlantı sayısı
   idleTimeoutMillis: 30000, // Boşta kalma zaman aşımı
-  connectionTimeoutMillis: 2000 // Bağlantı zaman aşımı
-});
+  connectionTimeoutMillis: 2000, // Bağlantı zaman aşımı
+};
+
+export const usingNeonDriver = isNeonConnection(connectionString);
+
+// Optimize database connection pool
+export const pool: any = usingNeonDriver
+  ? new NeonPool({ connectionString, ...POOL_SETTINGS })
+  : new pg.Pool({ connectionString, ...POOL_SETTINGS });
 
 // Drizzle ORM yapılandırması
-export const db = drizzle({ 
-  client: pool, 
-  schema,
-  logger: false // Loglama kapalı, performans için
-});
+export const db = (usingNeonDriver
+  ? drizzleNeon({ client: pool, schema, logger: false })
+  : drizzleNodePostgres({ client: pool, schema, logger: false })) as ReturnType<
+  typeof drizzleNeon<typeof schema>
+>;
+
+console.log(
+  `Veritabanı sürücüsü: ${usingNeonDriver ? 'neon-serverless' : 'node-postgres'}`,
+);
 
 // Genişletilmiş sorgu önbellekleme sistemi
 // Farklı sorgu tipleri için ayrı önbellekler - performans optimizasyonu

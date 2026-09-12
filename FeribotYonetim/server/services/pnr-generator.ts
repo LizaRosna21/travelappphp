@@ -6,6 +6,8 @@
 /**
  * Generate random alphanumeric string
  */
+const UPPERCASE_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
 function generateRandomString(length: number, onlyUppercase: boolean = false): string {
   const chars = onlyUppercase
     ? '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -32,17 +34,17 @@ function getDateComponent(): string {
 }
 
 /**
- * Generate booking reference in format FER-YYMMDD-XXXXX
+ * Generate booking reference in format PREFIX-YYMMDD-XXXXX
  * Where:
- * - FER: Prefix for ferry booking
+ * - PREFIX: Ürün kısaltması (FER = feribot, TRF = transfer)
  * - YYMMDD: Current date
  * - XXXXX: Random alphanumeric characters
  */
-export function generateBookingReference(): string {
+export function generateBookingReference(prefix: string = 'FER'): string {
   const dateComponent = getDateComponent();
   const randomComponent = generateRandomString(5, true);
   
-  return `FER-${dateComponent}-${randomComponent}`;
+  return `${prefix}-${dateComponent}-${randomComponent}`;
 }
 
 /**
@@ -50,8 +52,14 @@ export function generateBookingReference(): string {
  * Format: 2 letters followed by 6 numbers
  */
 export function generatePNR(): string {
-  // Generate 2 random uppercase letters
-  const letters = generateRandomString(2, true).replace(/[0-9]/g, '');
+  // Generate 2 random uppercase letters.
+  // Not: harfler daha önce rakam da içeren bir alfabeden üretilip rakamlar
+  // sonradan silindiği için PNR bazen 6, bazen 7, bazen 8 karakter oluyordu;
+  // bu da pnr_number benzersiz kısıtında gereksiz çakışmalara yol açıyordu.
+  const letters = Array.from(
+    { length: 2 },
+    () => UPPERCASE_LETTERS.charAt(Math.floor(Math.random() * UPPERCASE_LETTERS.length)),
+  ).join('');
   
   // Generate 6 random digits
   const numbers = Array.from({ length: 6 }, () => Math.floor(Math.random() * 10)).join('');

@@ -50,7 +50,8 @@ import {
   LineChart,
   PieChart,
   Building,
-  ShieldCheck
+  ShieldCheck,
+  Car
 } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import {
@@ -214,6 +215,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
           path: "/admin/products",
           icon: Package,
           description: "Ek hizmetler ve yardımcı ürünler"
+        },
+        {
+          label: "Transferler",
+          path: "/admin/transfers",
+          icon: Car,
+          description: "Havaalanı ve şehir içi transfer yönetimi"
         },
         {
           label: "Mars Rotası",

@@ -56,6 +56,7 @@ import AdvancedDashboardPage from "@/pages/admin/advanced-dashboard-page";
 import ApiManagementPage from "@/pages/admin/api-management";
 import PaymentSettings from "@/pages/admin/payment-settings";
 import ProductsPage from "@/pages/admin/products";
+import TransfersPage from "@/pages/admin/transfers";
 import PaymentsPage from "@/pages/admin/payments";
 import SchedulesPage from "@/pages/admin/schedules";
 import AdminInbox from "@/pages/admin/inbox";
@@ -111,6 +112,7 @@ function Router() {
           <AdminRoute path="/admin/bookings" component={AdminBookings} />
           <AdminRoute path="/admin/payments" component={PaymentsPage} />
           <AdminRoute path="/admin/products" component={ProductsPage} />
+          <AdminRoute path="/admin/transfers" component={TransfersPage} />
           <AdminRoute path="/admin/users" component={AdminUsers} />
           <AdminRoute path="/admin/settings" component={AdminSettings} />
           <AdminRoute path="/admin/marketing" component={AdminMarketing} />

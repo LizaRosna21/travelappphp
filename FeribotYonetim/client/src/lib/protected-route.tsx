@@ -62,7 +62,9 @@ export function AdminRoute({
     );
   }
 
-  if (user.role !== "admin") {
+  // Sunucudaki isAdmin ara katmanı da superadmin'i kabul ediyor; burada
+  // yalnızca "admin" aranınca superadmin hesabı panele hiç giremiyordu.
+  if (user.role !== "admin" && user.role !== "superadmin") {
     return (
       <Route path={path}>
         <Redirect to="/" />
