@@ -281,8 +281,11 @@ export function isAgent(req: Express.Request, res: Response, next: NextFunction)
   next();
 }
 
-// Helper function to check if a user is an admin (predicate function)
-export function checkIsAdmin(req: Express.Request): boolean {
+// Helper function to check if a user is an admin (predicate function).
+// Tip koruyucusu olarak yazıldı: kontrolden sonra req.user tanımlı kabul edilir.
+export function checkIsAdmin(
+  req: Express.Request,
+): req is Express.Request & { user: Express.User } {
   return req.isAuthenticated() && (req.user?.role === "admin" || req.user?.role === "superadmin");
 }
 

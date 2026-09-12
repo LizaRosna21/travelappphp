@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server, type IncomingMessage } from "http";
 import WebSocket, { WebSocketServer } from 'ws';
-import { setupAuth, isAdmin, hashPassword, getSessionMiddleware } from "./auth";
+import { setupAuth, isAdmin, hashPassword, getSessionMiddleware, checkIsAdmin } from "./auth";
 import Stripe from 'stripe';
 import multer from "multer";
 import path from "path";
@@ -1905,7 +1905,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User API (admin-only) - Kullanıcı Yönetim API'leri
   app.get("/api/admin/users", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -1919,7 +1919,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.get("/api/admin/users/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -1939,7 +1939,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.post("/api/admin/users", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -1984,7 +1984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.patch("/api/admin/users/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2021,7 +2021,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.patch("/api/admin/users/:id/status", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2051,7 +2051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   app.patch("/api/admin/users/:id/role", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2087,7 +2087,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Şifre sıfırlama endpoint'i
   app.post("/api/admin/users/:id/reset-password", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2120,7 +2120,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Kullanıcı silme endpoint'i - dikkatli kullanılmalıdır
   app.delete("/api/admin/users/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2170,7 +2170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/ports", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -2187,7 +2187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/ports/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2224,7 +2224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create sample Turkey-Greece routes
   app.post("/api/admin/create-sample-routes", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2438,7 +2438,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/routes", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2455,7 +2455,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/routes/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2480,7 +2480,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/schedules", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2497,7 +2497,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/schedules/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2534,7 +2534,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/ferry-companies", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2551,7 +2551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/ferry-companies/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2584,7 +2584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/vehicle-types", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2601,7 +2601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/vehicle-types/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2634,7 +2634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/passenger-types", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2651,7 +2651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.patch("/api/admin/passenger-types/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2760,7 +2760,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow access to own bookings unless admin
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2826,7 +2826,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow updates to own bookings unless admin
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2857,7 +2857,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow access to own bookings unless admin
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2883,7 +2883,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow access to own bookings unless admin
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -2909,7 +2909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Only allow payment for own bookings unless admin
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3346,7 +3346,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   app.get("/api/admin/languages", async (req, res) => {
     try {
       // Geçici olarak yetkilendirme kontrolünü kaldırıyoruz
-      // if (req.user?.role !== "admin") {
+      // if (!checkIsAdmin(req)) {
       //   return res.status(403).json({ message: "Unauthorized" });
       // }
       
@@ -3381,7 +3381,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/languages", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3398,7 +3398,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/languages/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3421,7 +3421,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/languages/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3443,7 +3443,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   app.get("/api/admin/translation-functions", async (req, res) => {
     try {
       // Geçici olarak yetkilendirme kontrolünü kaldırıyoruz
-      // if (req.user?.role !== "admin") {
+      // if (!checkIsAdmin(req)) {
       //   return res.status(403).json({ message: "Unauthorized" });
       // }
       
@@ -3458,7 +3458,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/translation-functions/category/:category", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3473,7 +3473,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/translation-functions/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3493,7 +3493,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/translation-functions", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3519,7 +3519,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.patch("/api/admin/translation-functions/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3551,7 +3551,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/translation-functions/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3572,7 +3572,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Translation Items API
   app.get("/api/admin/translation-items", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3586,7 +3586,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/translation-items/function/:functionId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3601,7 +3601,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/translation-items/language/:languageId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3616,7 +3616,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/translation-items/function/:functionId/language/:languageId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3632,7 +3632,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/translation-items/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3652,7 +3652,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/translation-items", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3677,7 +3677,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.patch("/api/admin/translation-items/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3708,7 +3708,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/translation-items/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3729,7 +3729,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Helper endpoint to sync translations for all functions when a new language is added
   app.post("/api/admin/languages/:id/sync-translations", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3815,7 +3815,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/currencies", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3849,7 +3849,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/currencies", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3866,7 +3866,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/currencies/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3904,7 +3904,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       }
       
       // Admin only for all translations (could be a lot of data)
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3916,7 +3916,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/translations", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3933,7 +3933,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/translations/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -3997,7 +3997,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/pages", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4014,7 +4014,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/pages/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4082,7 +4082,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/destinations", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4099,7 +4099,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/destinations/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4167,7 +4167,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/tours", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4184,7 +4184,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/tours/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4252,7 +4252,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/packages", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4269,7 +4269,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/packages/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4318,7 +4318,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/menus", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4335,7 +4335,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/menus/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4358,7 +4358,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/menus/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4410,7 +4410,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/menu-items", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4427,7 +4427,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/menu-items/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4450,7 +4450,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/menu-items/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4470,7 +4470,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API Endpoint'leri: E-posta Servisi
   app.post("/api/admin/send-email", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4517,7 +4517,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       }
       
       // Sadece kendi rezervasyonuna ya da admin erişebilir
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4570,7 +4570,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       }
       
       // Üye giriş zorunluluğunu kaldırdığımız için kimlik kontrolünü atla
-      // if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      // if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
       //   return res.status(403).json({ message: "Unauthorized" });
       // }
       
@@ -4608,7 +4608,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       }
       
       // Sadece kendi rezervasyonuna ya da admin erişebilir
-      if (booking.userId !== req.user!.id && req.user?.role !== "admin") {
+      if (booking.userId !== req.user!.id && !checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4876,7 +4876,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Get all payment providers
   app.get("/api/admin/payment-providers", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4890,7 +4890,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Get a specific payment provider
   app.get("/api/admin/payment-providers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4910,7 +4910,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Update payment provider settings
   app.put("/api/admin/payment-providers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4934,7 +4934,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Test payment provider connection
   app.post("/api/admin/payment-providers/:id/test", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4983,7 +4983,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/membership-tiers", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -4997,7 +4997,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.put("/api/admin/membership-tiers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5017,7 +5017,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/membership-tiers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5036,7 +5036,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Pricing Tiers Endpoints
   app.get("/api/admin/pricing-tiers", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5050,7 +5050,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/pricing-tiers/active", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5064,7 +5064,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/pricing-tiers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5084,7 +5084,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/pricing-tiers", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5100,7 +5100,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.put("/api/admin/pricing-tiers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5122,7 +5122,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/pricing-tiers/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5143,7 +5143,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Agency Pricing Endpoints
   app.get("/api/admin/agency-pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5157,7 +5157,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/agency-pricing/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5177,7 +5177,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/agency-pricing/agency/:agencyId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5193,7 +5193,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/agency-pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5209,7 +5209,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.put("/api/admin/agency-pricing/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5231,7 +5231,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/agency-pricing/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5252,7 +5252,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Route Pricing Endpoints
   app.get("/api/admin/route-pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5266,7 +5266,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/route-pricing/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5286,7 +5286,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/route-pricing/agency/:agencyId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5302,7 +5302,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/route-pricing/route/:routeId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5318,7 +5318,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/route-pricing/agency/:agencyId/route/:routeId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5340,7 +5340,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/route-pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5356,7 +5356,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.put("/api/admin/route-pricing/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5378,7 +5378,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/route-pricing/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5399,7 +5399,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API Endpoint'leri: Admin Panel Raporlama
   app.get("/api/admin/dashboard", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5415,7 +5415,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/sales", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5434,7 +5434,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/occupancy", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5453,7 +5453,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Review Management Endpoints
   app.get("/api/admin/reviews", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5540,7 +5540,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/reviews", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5561,7 +5561,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.put("/api/admin/reviews/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5582,7 +5582,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.patch("/api/admin/reviews/:id/status", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5605,7 +5605,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.delete("/api/admin/reviews/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5733,7 +5733,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/occupancy-stats", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5772,7 +5772,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/customers", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5790,7 +5790,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/analytics/predict-occupancy", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5818,7 +5818,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Performance Analytics API Endpoint
   app.get("/api/admin/analytics/performance", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5838,7 +5838,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API Endpoint'leri: Admin Panel Yönetimi
   app.patch("/api/admin/users/:id/role", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5864,7 +5864,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.patch("/api/admin/bookings/:id/status", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5890,7 +5890,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.patch("/api/admin/schedules/:id/capacity", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5916,7 +5916,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.patch("/api/admin/routes/:id/price", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5943,7 +5943,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API endpoints for Admin Reports/Analytics
   app.get("/api/admin/reports/analytics", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5960,7 +5960,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/trends", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5978,7 +5978,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/routes", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -5996,7 +5996,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/demographics", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6013,7 +6013,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/capacity", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6030,7 +6030,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.get("/api/admin/reports/pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6181,7 +6181,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/payments/refund", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6207,7 +6207,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Email service endpoints
   app.post("/api/admin/email/send", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6237,7 +6237,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/admin/email/newsletter", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6358,7 +6358,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/campaigns", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6382,7 +6382,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/campaigns/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6411,7 +6411,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/campaigns/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6463,7 +6463,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/customer-segments", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6488,7 +6488,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/customer-segments/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6516,7 +6516,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/customer-segments/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6542,7 +6542,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
         return res.json(performance);
       }
       
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6563,7 +6563,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/campaign-performance", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6580,7 +6580,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/campaign-performance/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6649,7 +6649,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/coupons", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6666,7 +6666,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/coupons/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6689,7 +6689,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/coupons/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6715,7 +6715,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
         return res.json(emails);
       }
       
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6751,7 +6751,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/marketing-emails", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6768,7 +6768,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/marketing-emails/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6791,7 +6791,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/marketing-emails/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6817,7 +6817,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       
       if (req.query.marketingEmailId) {
         // Only allow admins to query by marketing email ID
-        if (req.user?.role !== "admin") {
+        if (!checkIsAdmin(req)) {
           return res.status(403).json({ message: "Unauthorized" });
         }
         
@@ -6827,8 +6827,9 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       }
       
       // For regular users, only show their own email sends
-      if (req.user?.role !== "admin") {
-        const userSends = await storage.getEmailSendsByUserId(req.user!.id);
+      const requestUserId = req.user!.id;
+      if (!checkIsAdmin(req)) {
+        const userSends = await storage.getEmailSendsByUserId(requestUserId);
         return res.json(userSends);
       }
       
@@ -6848,7 +6849,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/email-sends", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6875,7 +6876,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/email-sends/:id/status", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -6929,7 +6930,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       
       if (req.query.couponId) {
         // Only allow admins to query by coupon ID
-        if (req.user?.role !== "admin") {
+        if (!checkIsAdmin(req)) {
           return res.status(403).json({ message: "Unauthorized" });
         }
         
@@ -6952,8 +6953,9 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
       }
       
       // For regular users, only show their own redemptions
-      if (req.user?.role !== "admin") {
-        const userRedemptions = await storage.getCouponRedemptionsByUserId(req.user!.id);
+      const requestUserId = req.user!.id;
+      if (!checkIsAdmin(req)) {
+        const userRedemptions = await storage.getCouponRedemptionsByUserId(requestUserId);
         return res.json(userRedemptions);
       }
       
@@ -7061,7 +7063,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Ferry tedarikçileri listesi
   app.get("/api/backoffice/suppliers", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7080,7 +7082,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry tedarikçi detayı
   app.get("/api/backoffice/suppliers/:id", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7108,7 +7110,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry tedarikçi ekleme
   app.post("/api/backoffice/suppliers", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7128,7 +7130,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry tedarikçi güncelleme
   app.put("/api/backoffice/suppliers/:id", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7164,7 +7166,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry tedarikçi silme
   app.delete("/api/backoffice/suppliers/:id", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7187,7 +7189,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry tedarikçi bağlantı testi
   app.post("/api/backoffice/suppliers/:id/test", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7234,7 +7236,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry rota senkronizasyonu
   app.post("/api/backoffice/suppliers/:id/sync-routes", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7325,7 +7327,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry rotaları listesi
   app.get("/api/backoffice/routes", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7345,7 +7347,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Ferry senkronizasyon logları
   app.get("/api/backoffice/sync-logs", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7367,7 +7369,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Backoffice API yapılandırması
   app.post("/api/backoffice/configure", (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7413,7 +7415,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Backoffice API durum kontrolü
   app.get("/api/backoffice/status", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7435,7 +7437,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Yedeklemeleri listele
   app.get("/api/backup/list", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7457,7 +7459,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Yeni yedekleme oluştur
   app.post("/api/backup/create", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7485,7 +7487,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Yedekleme planlarını listele
   app.get("/api/backup/schedules", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7505,7 +7507,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Yedekleme planı oluştur
   app.post("/api/backup/schedule/create", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7533,7 +7535,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Yedekleme planını etkinleştir/devre dışı bırak
   app.post("/api/backup/schedule/toggle", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7564,7 +7566,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Geri yükleme işlemlerini listele
   app.get("/api/backup/restore-operations", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7586,7 +7588,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Geri yükleme işlemi başlat
   app.post("/api/backup/restore", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7614,7 +7616,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Felaket kurtarma noktalarını listele
   app.get("/api/backup/disaster-recovery-points", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7634,7 +7636,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Felaket kurtarma noktası oluştur
   app.post("/api/backup/disaster-recovery-point", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7674,7 +7676,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   // Yedekleme sil
   app.delete("/api/backup/:id", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
     
@@ -7823,7 +7825,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // WhatsApp mesaj gönderme API endpoint'i
   app.post("/api/whatsapp/send", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7852,7 +7854,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // WhatsApp medya gönderme API endpoint'i
   app.post("/api/whatsapp/send-media", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7885,7 +7887,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // WhatsApp kampanya gönderme API endpoint'i
   app.post("/api/whatsapp/send-campaign", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -7932,7 +7934,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   // Rezervasyon durumu WhatsApp bildirimi gönderme API endpoint'i (admin için)
   app.post("/api/admin/whatsapp/notify-booking", async (req, res) => {
-    if (req.user?.role !== "admin") {
+    if (!checkIsAdmin(req)) {
       return res.status(403).json({ message: "Yetkisiz istek" });
     }
 
@@ -8207,7 +8209,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Dynamic Pricing Rules
   app.get("/api/admin/revenue/pricing-rules", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8221,7 +8223,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/pricing-rules/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8240,7 +8242,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/revenue/pricing-rules", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8259,7 +8261,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/revenue/pricing-rules/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8273,7 +8275,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/revenue/pricing-rules/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8309,7 +8311,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Price History
   app.get("/api/admin/revenue/price-history", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8334,7 +8336,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Demand Forecasts
   app.post("/api/admin/revenue/demand-forecasts", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8347,7 +8349,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/demand-forecasts", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8372,7 +8374,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Revenue Goals
   app.post("/api/admin/revenue/goals", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8391,7 +8393,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/goals", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8405,7 +8407,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/revenue/goals/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8420,7 +8422,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Competitor Pricing
   app.post("/api/admin/revenue/competitor-pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8433,7 +8435,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/competitor-pricing", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8458,7 +8460,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Revenue Snapshots
   app.post("/api/admin/revenue/snapshots", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8471,7 +8473,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/snapshots", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8497,7 +8499,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Yield Management Settings
   app.post("/api/admin/revenue/yield-settings", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8516,7 +8518,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/yield-settings", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8531,7 +8533,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Seasonal Pricing Factors
   app.post("/api/admin/revenue/seasonal-factors", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8550,7 +8552,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/seasonal-factors", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8564,7 +8566,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/revenue/seasonal-factors/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8579,7 +8581,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Special Events
   app.post("/api/admin/revenue/special-events", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8598,7 +8600,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/special-events", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8612,7 +8614,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.patch("/api/admin/revenue/special-events/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8627,7 +8629,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Analytics & Reports
   app.post("/api/admin/revenue/reports/revenue", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8654,7 +8656,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/route-performance/:routeId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8671,7 +8673,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/revenue/optimized-pricing/:routeId", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -8703,7 +8705,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API Integrations endpoints
   app.get("/api/integrations/status", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Unauthorized' });
       }
       
@@ -8716,7 +8718,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/integrations/:id/configure", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Unauthorized' });
       }
       
@@ -8730,7 +8732,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   
   app.post("/api/integrations/:id/test", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Unauthorized' });
       }
       
@@ -8799,7 +8801,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
     try {
       // Demo mod için admin kontrolünü geçici olarak kaldırıyoruz
       // Gerçek ortamda aktif olmalı
-      // if (req.user?.role !== "admin") {
+      // if (!checkIsAdmin(req)) {
       //   return res.status(403).json({ message: "Unauthorized" });
       // }
       
@@ -8925,7 +8927,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Transfer araç tipi oluştur (admin only)
   app.post('/api/admin/transfer/vehicle-types', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -8987,7 +8989,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Transfer rotası oluştur (admin only)
   app.post('/api/admin/transfer/routes', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -9015,7 +9017,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Transfer fiyatı oluştur (admin only)
   app.post('/api/admin/transfer/prices', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -9116,7 +9118,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Transfer aracı tipini güncelleme (admin)
   app.put('/api/admin/transfer/vehicle-types/:id', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -9137,7 +9139,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Transfer rotasını güncelleme (admin)
   app.put('/api/admin/transfer/routes/:id', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -9158,7 +9160,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Transfer fiyatını güncelleme (admin)
   app.put('/api/admin/transfer/prices/:id', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -9256,7 +9258,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API endpoint for generating sample routes
   app.post('/api/sample-routes', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Not authorized' });
       }
       
@@ -9440,7 +9442,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post('/api/countries', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Not authorized' });
       }
       
@@ -9455,7 +9457,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.put('/api/countries/:id', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Not authorized' });
       }
       
@@ -9476,7 +9478,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete('/api/countries/:id', async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: 'Not authorized' });
       }
       
@@ -9995,7 +9997,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // API Yapılandırma API'leri
   app.get("/api/admin/api-configs", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
 
@@ -10009,7 +10011,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.get("/api/admin/api-configs/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -10029,7 +10031,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/api-configs", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -10057,7 +10059,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.put("/api/admin/api-configs/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -10089,7 +10091,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.delete("/api/admin/api-configs/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -10115,7 +10117,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
 
   app.post("/api/admin/api-configs/:id/test", async (req, res) => {
     try {
-      if (req.user?.role !== "admin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -10158,7 +10160,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Tüm mesajları getir (Admin için)
   app.get("/api/admin/inbox", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
@@ -10445,7 +10447,7 @@ Sitemap: https://ferrybooking.web.tr/sitemap.xml`;
   // Mesajı tamamen sil (hard delete) - Sadece admin
   app.delete("/api/inbox/:id", async (req, res) => {
     try {
-      if (req.user?.role !== "admin" && req.user?.role !== "superadmin") {
+      if (!checkIsAdmin(req)) {
         return res.status(403).json({ message: "Unauthorized" });
       }
       
