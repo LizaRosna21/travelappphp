@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.cache/
+*.log
+
+# Local dev artifacts that must not be version-controlled
+FeribotYonetim/cookie.txt
+FeribotYonetim/backups/users/current_admin_password.txt
