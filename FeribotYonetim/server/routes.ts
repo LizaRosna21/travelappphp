@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
-import { createServer, type Server } from "http";
+import { createServer, type Server, type IncomingMessage } from "http";
 import WebSocket, { WebSocketServer } from 'ws';
-import { setupAuth, isAdmin, hashPassword } from "./auth";
+import { setupAuth, isAdmin, hashPassword, getSessionMiddleware } from "./auth";
 import Stripe from 'stripe';
 import multer from "multer";
 import path from "path";
@@ -84,6 +84,8 @@ import {
   insertTourDestinationSchema,
   insertPackageSchema,
   insertMenuSchema,
+  insertMenuItemSchema,
+  insertEmailSendSchema,
   insertCountrySchema,
   insertCampaignSchema,
   insertCustomerSegmentSchema,
@@ -99,7 +101,7 @@ import whatsAppChatbotService from './services/whatsapp/chatbot';
 import { aiRecommendationService } from './services/ai-recommendation';
 
 // Authentication middleware
-import { isAuthenticated, isAdmin } from './auth';
+import { isAuthenticated } from './auth';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Create HTTP server
@@ -1535,8 +1537,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Uygulama başlatıldığında ping kontrolünü başlat
   setupPingInterval();
   
+  // WebSocket kimliğini HTTP oturumundan çözer.
+  // İstemcinin gönderdiği userId'ye GÜVENİLMEZ; kimlik yalnızca imzalı
+  // connect.sid oturum çerezinden türetilir.
+  const resolveSessionUserId = (req: IncomingMessage): Promise<number | null> =>
+    new Promise((resolve) => {
+      try {
+        getSessionMiddleware()(req as any, {} as any, () => {
+          const passportSession = (req as any).session?.passport;
+          const sessionUserId = passportSession?.user;
+          resolve(typeof sessionUserId === 'number' ? sessionUserId : null);
+        });
+      } catch (error) {
+        console.error('WebSocket oturum çözümleme hatası:', error);
+        resolve(null);
+      }
+    });
+
   // WebSocket Sunucusu - Performans iyileştirmeleri
-  wss.on('connection', (ws: CustomWebSocket) => {
+  wss.on('connection', (ws: CustomWebSocket, upgradeRequest: IncomingMessage) => {
     console.log('Client connected to WebSocket');
     
     // Initialize subscriptions and role with performance optimizations
@@ -1600,75 +1619,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Handle auth messages with caching optimization
         else if (data.type === 'auth') {
-          // Kullanıcı kimlik doğrulama işlemi
-          if (data.userId) {
-            try {
-              const userId = parseInt(data.userId);
-              let user;
-              let fromCache = false;
-              
-              // Önce önbellekte kullanıcıyı ara
-              if (userCache.has(userId)) {
-                user = userCache.get(userId);
-                fromCache = true;
-                // Önbellek kullanım zamanını güncelle
-                userCache.get(userId)!.lastUsed = Date.now();
-                // console.log(`WebSocket auth: User ${userId} found in cache`);
-              } else {
-                // Kullanıcı önbellekte yoksa veritabanından getir
-                const dbUser = await storage.getUser(userId, true); // 'true' parametresi önbelleklemeyi etkinleştirir
-                
-                if (dbUser) {
-                  // Kullanıcıyı önbelleğe ekle
-                  user = {
-                    id: dbUser.id,
-                    username: dbUser.username,
-                    role: dbUser.role || 'user',
-                    lastUsed: Date.now()
-                  };
-                  userCache.set(userId, user);
-                  // console.log(`WebSocket auth: User ${userId} added to cache`);
-                }
+          try {
+            // Kimlik YALNIZCA imzalı oturum çerezinden alınır. İstemcinin
+            // gönderdiği data.userId dikkate alınmaz; aksi halde herhangi bir
+            // istemci başka bir kullanıcının bildirimlerini dinleyebilirdi.
+            const userId = await resolveSessionUserId(upgradeRequest);
+
+            if (!userId) {
+              ws.userId = null;
+              ws.role = 'guest';
+              ws.send(JSON.stringify({
+                type: 'auth_error',
+                message: 'Oturum bulunamadı. Lütfen tekrar giriş yapın.'
+              }));
+              return;
+            }
+
+            let user = userCache.get(userId);
+            let fromCache = Boolean(user);
+
+            if (user) {
+              // Önbellek kullanım zamanını güncelle
+              user.lastUsed = Date.now();
+            } else {
+              // Kullanıcı önbellekte yoksa veritabanından getir
+              const dbUser = await storage.getUser(userId);
+
+              if (dbUser) {
+                // Kullanıcıyı önbelleğe ekle
+                user = {
+                  id: dbUser.id,
+                  username: dbUser.username,
+                  role: dbUser.role || 'user',
+                  lastUsed: Date.now()
+                };
+                userCache.set(userId, user);
               }
-              
-              if (user) {
-                // Kullanıcı bilgilerini WebSocket'e kaydet
-                ws.userId = userId;
-                ws.role = user.role;
-                
-                // Başarılı cevap gönder
-                ws.send(JSON.stringify({ 
-                  type: 'auth_success', 
-                  userId: ws.userId,
-                  role: ws.role,
-                  message: `Kimlik doğrulama başarılı. Kullanıcı ID: ${ws.userId}`
-                }));
-                
-                // Okunmamış bildirim sayısını gönder
-                const unreadCount = await storage.getUnreadNotificationsCount(userId);
-                ws.send(JSON.stringify({
-                  type: 'unread_notifications_count',
-                  count: unreadCount
-                }));
-                
-                console.log(`WebSocket kullanıcı kimliği doğrulandı: ${userId} (${user.username})${fromCache ? ' [Önbellekten]' : ''}`);
-              } else {
-                ws.send(JSON.stringify({ 
-                  type: 'auth_error', 
-                  message: 'Kullanıcı bulunamadı'
-                }));
-              }
-            } catch (error) {
-              console.error('WebSocket kimlik doğrulama hatası:', error);
-              ws.send(JSON.stringify({ 
-                type: 'auth_error', 
-                message: 'Kimlik doğrulama hatası'
+            }
+
+            if (user) {
+              // Kullanıcı bilgilerini WebSocket'e kaydet
+              ws.userId = userId;
+              ws.role = user.role;
+
+              // Başarılı cevap gönder
+              ws.send(JSON.stringify({
+                type: 'auth_success',
+                userId: ws.userId,
+                role: ws.role,
+                message: `Kimlik doğrulama başarılı. Kullanıcı ID: ${ws.userId}`
+              }));
+
+              // Okunmamış bildirim sayısını gönder
+              const unreadCount = await storage.getUnreadNotificationsCount(userId);
+              ws.send(JSON.stringify({
+                type: 'unread_notifications_count',
+                count: unreadCount
+              }));
+
+              console.log(`WebSocket kullanıcı kimliği doğrulandı: ${userId} (${user.username})${fromCache ? ' [Önbellekten]' : ''}`);
+            } else {
+              ws.send(JSON.stringify({
+                type: 'auth_error',
+                message: 'Kullanıcı bulunamadı'
               }));
             }
-          } else {
-            ws.send(JSON.stringify({ 
-              type: 'auth_error', 
-              message: 'Geçersiz kimlik bilgileri'
+          } catch (error) {
+            console.error('WebSocket kimlik doğrulama hatası:', error);
+            ws.send(JSON.stringify({
+              type: 'auth_error',
+              message: 'Kimlik doğrulama hatası'
             }));
           }
         }

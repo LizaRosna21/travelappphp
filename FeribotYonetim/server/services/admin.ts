@@ -1,5 +1,15 @@
 import { db } from '../db';
-import { users, bookings, routes, schedules, pages, menus } from '@shared/schema';
+import {
+  users,
+  bookings,
+  routes,
+  schedules,
+  pages,
+  menus,
+  bookingPassengers,
+  bookingVehicles,
+  seatReservations,
+} from '@shared/schema';
 import { count, eq, and, sql, desc, asc, or, like, isNull, not, gte, lte } from 'drizzle-orm';
 import { generateInvoiceNumber, generatePNR, generateBookingReference } from './pnr-generator';
 
@@ -107,55 +117,49 @@ export class AdminService {
     const offset = (page - 1) * limit;
     
     try {
-      let query = db.select().from(users);
+      // Filtreler tek bir where() içinde birleştirilir; drizzle'da where()
+      // ikinci kez çağrıldığında önceki koşul ezilirdi.
+      const conditions = [];
       
-      // Apply search filter
+      // Apply search filter (users tablosunda firstName/lastName yok, fullName var)
       if (search) {
-        query = query.where(
+        conditions.push(
           or(
             like(users.username, `%${search}%`),
             like(users.email, `%${search}%`),
-            like(users.firstName, `%${search}%`),
-            like(users.lastName, `%${search}%`)
+            like(users.fullName, `%${search}%`)
           )
         );
       }
       
       // Apply role filter
       if (role) {
-        query = query.where(eq(users.role, role));
+        conditions.push(eq(users.role, role));
       }
+      
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
       
       // Apply sorting
-      if (sort === 'username') {
-        query = order === 'asc' 
-          ? query.orderBy(asc(users.username))
-          : query.orderBy(desc(users.username));
-      } else if (sort === 'email') {
-        query = order === 'asc'
-          ? query.orderBy(asc(users.email))
-          : query.orderBy(desc(users.email));
-      } else if (sort === 'firstName') {
-        query = order === 'asc'
-          ? query.orderBy(asc(users.firstName))
-          : query.orderBy(desc(users.firstName));
-      } else {
-        // Default to createdAt
-        query = order === 'asc'
-          ? query.orderBy(asc(users.createdAt))
-          : query.orderBy(desc(users.createdAt));
-      }
-      
-      // Apply pagination
-      query = query.limit(limit).offset(offset);
+      const sortColumn =
+        sort === 'username' ? users.username
+        : sort === 'email' ? users.email
+        : sort === 'fullName' || sort === 'firstName' ? users.fullName
+        : users.createdAt;
       
       // Execute query
-      const results = await query;
+      const results = await db
+        .select()
+        .from(users)
+        .where(whereClause)
+        .orderBy(order === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit)
+        .offset(offset);
       
-      // Get total count for pagination
+      // Get total count for pagination (aynı filtrelerle)
       const [totalResult] = await db
         .select({ count: count() })
-        .from(users);
+        .from(users)
+        .where(whereClause);
       
       return {
         users: results,
@@ -205,16 +209,13 @@ export class AdminService {
     const offset = (page - 1) * limit;
     
     try {
-      let query = db.select({
-        booking: bookings,
-        route: routes
-      })
-      .from(bookings)
-      .leftJoin(routes, eq(bookings.routeId, routes.id));
+      // Tüm filtreler tek where() içinde birleştirilir; ayrı ayrı where()
+      // çağrıldığında drizzle yalnızca sonuncusunu uyguluyordu.
+      const conditions = [];
       
       // Apply search filter
       if (search) {
-        query = query.where(
+        conditions.push(
           or(
             like(bookings.bookingReference, `%${search}%`),
             like(bookings.pnrNumber, `%${search}%`)
@@ -224,65 +225,62 @@ export class AdminService {
       
       // Apply status filter
       if (status) {
-        query = query.where(eq(bookings.status, status));
+        conditions.push(eq(bookings.status, status));
       }
       
       // Apply payment status filter
       if (isPaid !== undefined) {
-        query = query.where(eq(bookings.isPaid, isPaid));
+        conditions.push(eq(bookings.isPaid, isPaid));
       }
       
       // Apply date range filter
       if (dateFrom) {
         const fromDate = new Date(dateFrom);
-        query = query.where(gte(bookings.departureDate, fromDate.toISOString()));
+        conditions.push(gte(bookings.departureDate, fromDate.toISOString()));
       }
       
       if (dateTo) {
         const toDate = new Date(dateTo);
-        query = query.where(lte(bookings.departureDate, toDate.toISOString()));
+        conditions.push(lte(bookings.departureDate, toDate.toISOString()));
       }
       
       // Apply user filter
       if (userId) {
-        query = query.where(eq(bookings.userId, userId));
+        conditions.push(eq(bookings.userId, userId));
       }
       
       // Apply route filter
       if (routeId) {
-        query = query.where(eq(bookings.routeId, routeId));
+        conditions.push(eq(bookings.routeId, routeId));
       }
+      
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
       
       // Apply sorting
-      if (sort === 'departureDate') {
-        query = order === 'asc' 
-          ? query.orderBy(asc(bookings.departureDate))
-          : query.orderBy(desc(bookings.departureDate));
-      } else if (sort === 'totalPrice') {
-        query = order === 'asc'
-          ? query.orderBy(asc(bookings.totalPrice))
-          : query.orderBy(desc(bookings.totalPrice));
-      } else if (sort === 'status') {
-        query = order === 'asc'
-          ? query.orderBy(asc(bookings.status))
-          : query.orderBy(desc(bookings.status));
-      } else {
-        // Default to createdAt
-        query = order === 'asc'
-          ? query.orderBy(asc(bookings.createdAt))
-          : query.orderBy(desc(bookings.createdAt));
-      }
-      
-      // Apply pagination
-      query = query.limit(limit).offset(offset);
+      const sortColumn =
+        sort === 'departureDate' ? bookings.departureDate
+        : sort === 'totalPrice' ? bookings.totalPrice
+        : sort === 'status' ? bookings.status
+        : bookings.createdAt;
       
       // Execute query
-      const results = await query;
+      const results = await db
+        .select({
+          booking: bookings,
+          route: routes
+        })
+        .from(bookings)
+        .leftJoin(routes, eq(bookings.routeId, routes.id))
+        .where(whereClause)
+        .orderBy(order === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit)
+        .offset(offset);
       
-      // Get total count for pagination
+      // Get total count for pagination (aynı filtrelerle)
       const [totalResult] = await db
         .select({ count: count() })
-        .from(bookings);
+        .from(bookings)
+        .where(whereClause);
       
       return {
         bookings: results.map(r => ({
@@ -345,7 +343,7 @@ export class AdminService {
         .where(eq(bookingVehicles.bookingId, bookingId));
       
       // Get seat reservations if available
-      const seatReservations = await db
+      const bookingSeatReservations = await db
         .select()
         .from(seatReservations)
         .where(eq(seatReservations.bookingId, bookingId));
@@ -356,7 +354,7 @@ export class AdminService {
         user: user[0] || null,
         passengers,
         vehicles,
-        seatReservations
+        seatReservations: bookingSeatReservations
       };
     } catch (error) {
       console.error('Error getting booking details:', error);
@@ -390,12 +388,10 @@ export class AdminService {
    */
   async changeUserRole(userId: number, role: string) {
     try {
+      // users tablosunda updatedAt sütunu bulunmuyor
       const [updatedUser] = await db
         .update(users)
-        .set({ 
-          role,
-          updatedAt: new Date()
-        })
+        .set({ role })
         .where(eq(users.id, userId))
         .returning();
       
@@ -427,44 +423,34 @@ export class AdminService {
     const offset = (page - 1) * limit;
     
     try {
-      let query = db.select().from(pages);
-      
       // Apply search filter
-      if (search) {
-        query = query.where(
-          or(
+      const whereClause = search
+        ? or(
             like(pages.title, `%${search}%`),
             like(pages.slug, `%${search}%`)
           )
-        );
-      }
+        : undefined;
       
       // Apply sorting
-      if (sort === 'title') {
-        query = order === 'asc' 
-          ? query.orderBy(asc(pages.title))
-          : query.orderBy(desc(pages.title));
-      } else if (sort === 'slug') {
-        query = order === 'asc'
-          ? query.orderBy(asc(pages.slug))
-          : query.orderBy(desc(pages.slug));
-      } else {
-        // Default to createdAt
-        query = order === 'asc'
-          ? query.orderBy(asc(pages.createdAt))
-          : query.orderBy(desc(pages.createdAt));
-      }
-      
-      // Apply pagination
-      query = query.limit(limit).offset(offset);
+      const sortColumn =
+        sort === 'title' ? pages.title
+        : sort === 'slug' ? pages.slug
+        : pages.createdAt;
       
       // Execute query
-      const results = await query;
+      const results = await db
+        .select()
+        .from(pages)
+        .where(whereClause)
+        .orderBy(order === 'asc' ? asc(sortColumn) : desc(sortColumn))
+        .limit(limit)
+        .offset(offset);
       
-      // Get total count for pagination
+      // Get total count for pagination (aynı filtreyle)
       const [totalResult] = await db
         .select({ count: count() })
-        .from(pages);
+        .from(pages)
+        .where(whereClause);
       
       return {
         pages: results,
@@ -507,11 +493,9 @@ export class AdminService {
   }) {
     try {
       const [updatedSchedule] = await db
+        // schedules tablosunda updatedAt sütunu bulunmuyor
         .update(schedules)
-        .set({ 
-          ...data,
-          updatedAt: new Date()
-        })
+        .set({ ...data })
         .where(eq(schedules.id, scheduleId))
         .returning();
       
@@ -531,11 +515,9 @@ export class AdminService {
   }) {
     try {
       const [updatedRoute] = await db
+        // routes tablosunda updatedAt sütunu bulunmuyor
         .update(routes)
-        .set({ 
-          ...data,
-          updatedAt: new Date() 
-        })
+        .set({ ...data })
         .where(eq(routes.id, routeId))
         .returning();
       

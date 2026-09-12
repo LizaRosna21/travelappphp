@@ -9,7 +9,8 @@ import { getUserByUsername, getUser } from "./bypass-memstorage";
 
 declare global {
   namespace Express {
-    interface User extends SelectUser {}
+    // Parola hash'i oturumda taşınmaz; req.user her zaman parolasız kullanıcıdır.
+    interface User extends Omit<SelectUser, "password"> {}
   }
 }
 
@@ -18,35 +19,64 @@ export async function hashPassword(password: string) {
   return bcrypt.hash(password, saltRounds);
 }
 
-async function comparePasswords(supplied: string, stored: string) {
+// Demo kurulumunda kullanılan sabit şifreler. Yalnızca aşağıdaki hesaplar için
+// ve yalnızca demo modu açıkken geçerlidir; üretimde tamamen devre dışıdır.
+const DEMO_ACCOUNT_PASSWORDS: Record<string, string> = {
+  admin: "admin123",
+  superadmin: "superadmin123",
+  demo: "demo123",
+  agent: "agent123",
+  member: "member123",
+};
+
+function isDemoLoginEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" && process.env.DEMO_MODE === "true";
+}
+
+async function comparePasswords(username: string, supplied: string, stored: string) {
   try {
-    console.log(`Comparing passwords: supplied=${supplied} , stored=${stored}`);
-    
-    // Tüm demo kullanıcılar için en basit güvenlik - üretim ortamında kullanmayın!
-    // Belirli kullanıcılar için önceden tanımlanmış şifreleri kabul et
-    if (supplied === 'admin123' || supplied === 'superadmin123' || supplied === 'demo123' || 
-        supplied === 'agent123' || supplied === 'member123') {
-      console.log(`Demo user password match hardcoded for: ${supplied}`);
+    // Demo kısayolu: sadece bilinen demo hesapları, sadece kendi şifresiyle ve
+    // sadece demo modunda. Diğer tüm hesaplar bcrypt ile doğrulanır.
+    if (isDemoLoginEnabled() && DEMO_ACCOUNT_PASSWORDS[username] === supplied) {
+      console.log(`Demo login shortcut used for account: ${username}`);
       return true;
     }
-    
-    // Bu noktada gelirsek, yine de bcrypt karşılaştırmasını dene
-    try {
-      const result = await bcrypt.compare(supplied, stored);
-      console.log(`Password comparison result: ${result}`);
-      return result;
-    } catch (bcryptError) {
-      console.error('Bcrypt comparison error:', bcryptError);
-    }
-    
-    return false;
+
+    return await bcrypt.compare(supplied, stored);
   } catch (error) {
+    // Geçersiz/boş hash bcrypt.compare tarafından hata olarak döner -> giriş reddedilir
     console.error('Error comparing passwords:', error);
     return false;
   }
 }
 
+// Oturum/yanıt gövdelerinden parola hash'ini ayıklar
+function toSafeUser<T extends Record<string, any>>(user: T): Omit<T, "password"> {
+  const { password, ...safeUser } = user;
+  return safeUser;
+}
+
+// Oturum ara katmanı; WebSocket el sıkışmasında da kullanılabilmesi için saklanır.
+let sessionMiddleware: ReturnType<typeof session> | null = null;
+
+/**
+ * Express oturum ara katmanını döndürür. HTTP dışı bağlamlarda (ör. WebSocket
+ * upgrade isteği) oturumu çözmek için kullanılır.
+ */
+export function getSessionMiddleware(): ReturnType<typeof session> {
+  if (!sessionMiddleware) {
+    throw new Error("setupAuth() must be called before getSessionMiddleware()");
+  }
+  return sessionMiddleware;
+}
+
 export function setupAuth(app: Express) {
+  if (process.env.NODE_ENV === "production" && !process.env.SESSION_SECRET) {
+    throw new Error(
+      "SESSION_SECRET must be set in production; refusing to start with the built-in development secret.",
+    );
+  }
+
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "ferry-booking-secret-key",
     resave: false,
@@ -60,7 +90,8 @@ export function setupAuth(app: Express) {
   };
 
   app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
+  sessionMiddleware = session(sessionSettings);
+  app.use(sessionMiddleware);
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -81,7 +112,7 @@ export function setupAuth(app: Express) {
         }
         
         // Şifre kontrolü
-        if (!user || !(await comparePasswords(password, user.password))) {
+        if (!user || !(await comparePasswords(username, password, user.password))) {
           console.log("Kimlik doğrulama başarısız: Geçersiz kullanıcı adı veya şifre");
           return done(null, false, { message: "Invalid username or password" });
         } else {
@@ -107,10 +138,10 @@ export function setupAuth(app: Express) {
         user = await storage.getUser(id);
       }
       
-      // Hassas verileri temizle
+      // Hassas verileri temizle: parola hash'i oturuma/req.user'a hiç konmaz.
+      // Parola yalnızca giriş anında LocalStrategy içinde kullanılır.
       if (user) {
-        const { password, ...safeUser } = user;
-        done(null, { ...safeUser, password: user.password }); // Şifre hala authentication için gerekli
+        done(null, toSafeUser(user));
       } else {
         done(null, null);
       }
@@ -142,7 +173,7 @@ export function setupAuth(app: Express) {
       // Log in the user
       req.login(user, (err) => {
         if (err) return next(err);
-        return res.status(201).json(user);
+        return res.status(201).json(toSafeUser(user));
       });
     } catch (error) {
       next(error);
@@ -152,7 +183,7 @@ export function setupAuth(app: Express) {
   app.post("/api/login", (req, res, next) => {
     console.log("Login attempt for:", req.body.username);
     
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: any, user: Express.User | false, info: any) => {
       if (err) {
         console.error("Login error:", err);
         return next(err);
@@ -171,7 +202,7 @@ export function setupAuth(app: Express) {
           return next(loginErr);
         }
         console.log("Login completed successfully for:", user.username);
-        return res.status(200).json(user);
+        return res.status(200).json(toSafeUser(user));
       });
     })(req, res, next);
   });
@@ -188,8 +219,7 @@ export function setupAuth(app: Express) {
     
     // Hassas bilgileri filtreleyen optimize edilmiş yanıt döndür
     // Bu, gereksiz veri transferini azaltır ve güvenliği artırır
-    const { password, ...safeUserData } = req.user;
-    res.json(safeUserData);
+    res.json(toSafeUser(req.user));
   });
 
   // Admin check middleware

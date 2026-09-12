@@ -20,6 +20,7 @@ import {
   reviewVotes,
   socialShares
 } from '../shared/schema-updates';
+import { sql } from 'drizzle-orm';
 import { hashPassword } from './auth';
 
 // Demo ve Member kullanıcıları için örnek veri oluşturma

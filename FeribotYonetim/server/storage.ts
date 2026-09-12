@@ -2888,29 +2888,6 @@ export class DatabaseStorage implements IStorage {
   // BİLDİRİM METOTLARI
   // ==================
   
-  // Tüm bildirimleri getir
-  async getAllNotifications(): Promise<Notification[]> {
-    try {
-      return await db.select().from(notifications).orderBy(desc(notifications.createdAt));
-    } catch (error) {
-      console.error('Tüm bildirimleri getirme hatası:', error);
-      return [];
-    }
-  }
-  
-  // Kullanıcıya ait bildirimleri getir
-  async getUserNotifications(userId: number): Promise<Notification[]> {
-    try {
-      return await db.select()
-        .from(notifications)
-        .where(eq(notifications.userId, userId))
-        .orderBy(desc(notifications.createdAt));
-    } catch (error) {
-      console.error(`${userId} ID'li kullanıcının bildirimlerini getirme hatası:`, error);
-      return [];
-    }
-  }
-  
   // Kullanıcının okunmamış bildirim sayısını al
   async getUnreadNotificationsCount(userId: number): Promise<number> {
     try {

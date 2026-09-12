@@ -56,7 +56,17 @@ function getCacheType(sql: string): 'user' | 'route' | 'booking' | 'general' {
   return 'general';
 }
 
-db.execute = async (sql: string, params: any[] = [], useCache = true) => {
+// Drizzle'ın kendi db.execute'u burada geçersiz kılınıyor. Ham SQL metni +
+// parametre dizisi ile çağrıldığında önbellekli pool.query kullanılır; drizzle
+// `sql` şablonu ile çağrıldığında ise orijinal uygulamaya devredilir.
+const drizzleExecute = db.execute.bind(db);
+
+db.execute = (async (sql: any, params: any[] = [], useCache = true) => {
+  // Drizzle SQL nesnesi (ör. db.execute(sql`SELECT ...`)) -> orijinal davranış
+  if (typeof sql !== 'string') {
+    return await drizzleExecute(sql);
+  }
+
   // Önbellek kullanılacaksa ve SQL sorgusu basit bir SELECT ise
   // DELETE, UPDATE ve INSERT sorgularını önbelleğe almıyoruz
   if (useCache && sql.trim().toLowerCase().startsWith('select')) {
@@ -100,16 +110,27 @@ db.execute = async (sql: string, params: any[] = [], useCache = true) => {
   
   // Önbellek kullanılmayacaksa doğrudan çalıştır
   return await pool.query(sql, params);
-};
+}) as typeof db.execute;
+
+// Önbellek yardımcıları db nesnesine ekleniyor; tipi burada genişletiyoruz.
+type CacheCategory = 'user' | 'route' | 'booking' | 'general';
+
+interface QueryCacheHelpers {
+  clearCache: () => void;
+  clearCacheCategory: (category: CacheCategory) => void;
+  getCacheStats: () => Record<CacheCategory | 'total', number>;
+}
+
+const dbCache = db as typeof db & QueryCacheHelpers;
 
 // Önbelleği temizleme fonksiyonları - geliştirilmiş
-db.clearCache = () => {
+dbCache.clearCache = () => {
   Object.values(queryCaches).forEach(cache => cache.clear());
   console.log('All query caches cleared');
 };
 
 // Belirli bir kategori için önbelleği temizleme
-db.clearCacheCategory = (category: 'user' | 'route' | 'booking' | 'general') => {
+dbCache.clearCacheCategory = (category: CacheCategory) => {
   if (queryCaches[category]) {
     queryCaches[category].clear();
     console.log(`${category} cache cleared`);
@@ -119,7 +140,7 @@ db.clearCacheCategory = (category: 'user' | 'route' | 'booking' | 'general') => 
 };
 
 // Önbellek durumu hakkında bilgi
-db.getCacheStats = () => {
+dbCache.getCacheStats = () => {
   const stats = {
     user: queryCaches.user.size,
     route: queryCaches.route.size,
